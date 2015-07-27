@@ -28,14 +28,32 @@
         '../platform/qt/qmapboxgl_p.hpp',
       ],
 
-      'cflags_cc': [
-        '<@(qt_cflags)',
-        '-Wno-error'
+      'conditions': [
+        ['OS == "linux"', {
+          'cflags_cc': [
+            '<@(opengl_cflags)',
+            '<@(qt_cflags)',
+            '-Wno-error'
+          ],
+
+          'libraries': [
+            '<@(opengl_ldflags)',
+            '<@(qt_ldflags)'
+          ],
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'OTHER_CPLUSPLUSFLAGS': [
+              '<@(qt_cflags)',
+              '-Wno-error'
+            ],
+            'OTHER_LDFLAGS': [
+              '<@(qt_ldflags)'
+            ],
+          }
+        }],
       ],
 
-      'libraries': [
-        '<@(qt_ldflags)'
-      ],
       'rules': [
         {
           'rule_name': 'MOC files',
