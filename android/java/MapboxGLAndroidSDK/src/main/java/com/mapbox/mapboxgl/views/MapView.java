@@ -50,6 +50,7 @@ import com.mapbox.mapboxgl.annotations.Polygon;
 import com.mapbox.mapboxgl.annotations.PolygonOptions;
 import com.mapbox.mapboxgl.annotations.Polyline;
 import com.mapbox.mapboxgl.annotations.PolylineOptions;
+import com.mapbox.mapboxgl.geometry.BoundingBox;
 import com.mapbox.mapboxgl.geometry.LatLng;
 import com.mapbox.mapboxgl.geometry.LatLngZoom;
 import com.mapzen.android.lost.api.LocationListener;
@@ -426,6 +427,10 @@ public class MapView extends FrameLayout implements LocationListener {
 
     public List<Annotation> getAnnotations() {
         return Collections.unmodifiableList(mAnnotations);
+    }
+
+    public List<Annotation> getAnnotationsInBounds(BoundingBox bbox) {
+        return mNativeMapView.getAnnotationsInBounds(bbox);
     }
 
     //

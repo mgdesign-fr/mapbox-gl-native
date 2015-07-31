@@ -43,6 +43,10 @@ extern jfieldID latLngZoomLatitudeId;
 extern jfieldID latLngZoomLongitudeId;
 extern jfieldID latLngZoomZoomId;
 
+extern jclass bboxClass;
+extern jfieldID bboxSWId;
+extern jfieldID bboxNEId;
+
 extern jclass markerClass;
 extern jmethodID markerConstructorId;
 extern jfieldID markerPositionId;
