@@ -4,6 +4,7 @@
 #include <mbgl/map/map.hpp>
 #include <mbgl/map/view.hpp>
 #include <mbgl/storage/default_file_source.hpp>
+#include <mbgl/storage/sqlite_cache.hpp>
 
 #include <QObject>
 
@@ -40,6 +41,7 @@ public:
     bool contextIsCurrent;
     QGLContext *context;
 
+    mbgl::SQLiteCache cacheObj;
     mbgl::DefaultFileSource fileSourceObj;
     mbgl::Map mapObj;
 

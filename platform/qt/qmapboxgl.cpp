@@ -141,7 +141,8 @@ quint32 QMapboxGL::addPointAnnotation(const QString &name, const QPointF &positi
 QMapboxGLPrivate::QMapboxGLPrivate(QMapboxGL *q)
     : size({0, 0})
     , contextIsCurrent(false)
-    , fileSourceObj(nullptr)
+    , cacheObj("/tmp/mbgl-cache.db")
+    , fileSourceObj(&cacheObj)
     , mapObj(*this, fileSourceObj)
     , q_ptr(q)
 {
