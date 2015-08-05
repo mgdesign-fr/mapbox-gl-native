@@ -16,3 +16,11 @@ function print_opengl_flags {
     CONFIG+="    'opengl_cflags%': $(quote_flags $(pkg-config gl x11 --cflags)),"$LN
     CONFIG+="    'opengl_ldflags%': $(quote_flags $(pkg-config gl x11 --libs)),"$LN
 }
+
+function print_qt_flags {
+    mason install qt system
+
+    CONFIG+="    'qt_cflags%': $(quote_flags $(mason cflags qt system "QtCore QtGui QtOpenGL")),"$LN
+    CONFIG+="    'qt_ldflags%': $(quote_flags $(mason ldflags qt system "QtCore QtGui QtOpenGL")),"$LN
+    CONFIG+="    'qt_moc%': '$(pkg-config QtCore --variable=moc_location)',"$LN
+}

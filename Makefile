@@ -63,6 +63,10 @@ run-linux: linux ; (cd build/linux-x86_64/$(BUILDTYPE) && ./mapbox-gl)
 run-valgrind-linux: linux
 	(cd build/linux-x86_64/$(BUILDTYPE) && valgrind --leak-check=full --suppressions=../../../scripts/valgrind.sup ./mapbox-gl)
 
+.PHONY: qt run-qt
+qt: ; $(RUN) Makefile/qtapp
+run-qt: qt ; (cd build/$(BUILD)-x86_64/$(BUILDTYPE) && ./qmapbox-gl)
+
 .PHONY: android android-lib
 # Builds a particular android architecture.
 android-lib-%: ; $(RUN) HOST=android HOST_VERSION=$* Makefile/androidapp

@@ -11,3 +11,11 @@ LIBUV_VERSION=0.10.28
 ZLIB_VERSION=system
 NUNICODE_VERSION=1.5.1
 LIBZIP_VERSION=0.11.2
+
+function print_qt_flags {
+    mason install qt system
+
+    CONFIG+="    'qt_cflags%': $(quote_flags $(mason cflags qt system "QtCore QtGui QtOpenGL")),"$LN
+    CONFIG+="    'qt_ldflags%': $(quote_flags $(mason ldflags qt system "QtCore QtGui QtOpenGL")),"$LN
+    CONFIG+="    'qt_moc%': '$(pkg-config QtCore --variable=moc_location)',"$LN
+}
