@@ -24,8 +24,15 @@
         '../include/mbgl/platform/qt/qmapboxgl.hpp',
         '../platform/default/default_styles.cpp',
         '../platform/default/log_stderr.cpp',
+        '../platform/qt/qfilesource_p.cpp',
+        '../platform/qt/qfilesource_p.hpp',
         '../platform/qt/qmapboxgl.cpp',
         '../platform/qt/qmapboxgl_p.hpp',
+      ],
+
+      'include_dirs': [
+        '../include',
+        '../src',
       ],
 
       'conditions': [

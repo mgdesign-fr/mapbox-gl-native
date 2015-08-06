@@ -5,7 +5,6 @@
 #include <mbgl/map/map.hpp>
 #include <mbgl/platform/gl.hpp>
 #include <mbgl/platform/qt/qmapboxgl.hpp>
-#include <mbgl/storage/default_file_source.hpp>
 
 #include <QGLContext>
 #include <QImage>
@@ -25,7 +24,7 @@ QMapboxGL::~QMapboxGL()
 
 void QMapboxGL::setAccessToken(const QString &token)
 {
-    d_ptr->fileSourceObj.setAccessToken(token.toUtf8().constData());
+    d_ptr->fileSourceObj.setAccessToken(token);
 }
 
 void QMapboxGL::setStyleJSON(const QString &style)
@@ -141,8 +140,6 @@ quint32 QMapboxGL::addPointAnnotation(const QString &name, const QPointF &positi
 QMapboxGLPrivate::QMapboxGLPrivate(QMapboxGL *q)
     : size({0, 0})
     , contextIsCurrent(false)
-    , cacheObj("/tmp/mbgl-cache.db")
-    , fileSourceObj(&cacheObj)
     , mapObj(*this, fileSourceObj)
     , q_ptr(q)
 {
