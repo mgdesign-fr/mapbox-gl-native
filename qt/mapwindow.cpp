@@ -19,6 +19,9 @@ MapWindow::MapWindow(QGLContext *ctx)
     connect(&m_map, SIGNAL(initialized()), this, SLOT(show()));
 
     m_map.setAccessToken(qgetenv("MAPBOX_ACCESS_TOKEN"));
+
+    m_map.setCacheDatabase("/tmp/mbgl-cache.db");
+
     changeStyle();
 }
 

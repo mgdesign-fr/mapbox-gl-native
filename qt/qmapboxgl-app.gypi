@@ -28,6 +28,8 @@
         '../platform/qt/qfilesource_p.hpp',
         '../platform/qt/qmapboxgl.cpp',
         '../platform/qt/qmapboxgl_p.hpp',
+        '../platform/qt/qsqlitecache_p.cpp',
+        '../platform/qt/qsqlitecache_p.hpp',
       ],
 
       'include_dirs': [

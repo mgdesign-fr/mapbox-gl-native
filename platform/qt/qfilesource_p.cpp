@@ -1,5 +1,7 @@
 #include "qfilesource_p.hpp"
 
+#include "qsqlitecache_p.hpp"
+
 #include <mbgl/util/mapbox.hpp>
 #include <mbgl/storage/request.hpp>
 #include <mbgl/storage/response.hpp>
@@ -7,6 +9,7 @@
 #include <QByteArray>
 #include <QDir>
 #include <QNetworkReply>
+#include <QScopedPointer>
 #include <QSslConfiguration>
 
 QFileSourcePrivate::QFileSourcePrivate()
@@ -21,6 +24,15 @@ QFileSourcePrivate::QFileSourcePrivate()
 void QFileSourcePrivate::setAccessToken(const QString& token)
 {
     m_token = token.toUtf8().constData();
+}
+
+void QFileSourcePrivate::setCacheDatabase(const QString& path)
+{
+    QScopedPointer<QSqliteCachePrivate> cache(new QSqliteCachePrivate(path));
+
+    if (cache->isValid()) {
+        m_manager.setCache(cache.take());
+    }
 }
 
 mbgl::Request *QFileSourcePrivate::request(const mbgl::Resource &resource, uv_loop_t *loop, Callback cb)
@@ -74,6 +86,7 @@ void QFileSourcePrivate::handleUrlRequest(mbgl::Request *req)
     }
 
     QNetworkRequest qreq = QNetworkRequest(url);
+    qreq.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
 
     QSslConfiguration config = qreq.sslConfiguration();
     config.setProtocol(QSsl::TlsV1);

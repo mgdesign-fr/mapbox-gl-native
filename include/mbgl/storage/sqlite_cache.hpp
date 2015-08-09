@@ -11,6 +11,8 @@ namespace util {
 template <typename T> class Thread;
 }
 
+std::string unifyMapboxURLs(const std::string &url);
+
 class SQLiteCache : public FileCache {
 public:
     SQLiteCache(const std::string &path = ":memory:");
