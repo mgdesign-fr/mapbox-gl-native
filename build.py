@@ -36,6 +36,8 @@ subprocess.call(build_shaders_cmd)
 
 # Compile source files
 #
+OBJs = []
+
 for root, dirs, files in os.walk("src"):
   
   for fname in files:
@@ -46,6 +48,7 @@ for root, dirs, files in os.walk("src"):
 
     in_path = os.path.join(root, fname)
     out_path = os.path.join(scriptPath, "build", "%s.o" % name)
+    OBJs.append(out_path)
    
     if file_index < FILES_TO_SKIP:
       file_index += 1
@@ -77,6 +80,19 @@ for root, dirs, files in os.walk("src"):
     subprocess.call(clang_cmd)
 
     file_index += 1
+
+assert len(OBJs) == len(set(OBJs))
+
+# Link DLL
+#
+clang_cmd = [ "clang++", "-std=c++1y", "-shared", "-g" ]
+clang_cmd += [ "-o", "toto.dll" ]
+clang_cmd += [ "--verbose" ]
+#clang_cmd += [ "-L" ]
+clang_cmd += [ "-lpthread" ]
+clang_cmd += OBJs
+print clang_cmd
+subprocess.call(clang_cmd)
 
 """
 import os, subprocess, sys, errno
