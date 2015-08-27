@@ -3,13 +3,21 @@
 import os, subprocess
 
 CLANG="clang"
+FILES_TO_SKIP=29
 
 scriptPath = os.path.dirname(os.path.abspath(__file__))
+file_index = 0
 
 for root, dirs, files in os.walk("src"):
+  
   for fname in files:
     name, ext = os.path.splitext(fname)
+
     if not ext.lower() in [".c", ".cpp"]:
+      continue
+
+    if file_index < FILES_TO_SKIP:
+      file_index += 1
       continue
 
     is_cpp = ext.lower() in [".cpp"]
@@ -18,7 +26,7 @@ for root, dirs, files in os.walk("src"):
     
     clang_cmd = []
     if is_cpp:
-      clang_cmd += [ "clang++", "-std=c++14" ]
+      clang_cmd += [ "clang++", "-std=c++1y" ]
     else:
       clang_cmd += [ "clang" ]
 
@@ -30,8 +38,10 @@ for root, dirs, files in os.walk("src"):
     clang_cmd += [fpath]
     #clang_cmd += ["--verbose"]
 
-    print clang_cmd
+    print file_index, "**", clang_cmd
     subprocess.call(clang_cmd)
+
+    file_index += 1
 
 """
 import os, subprocess, sys, errno
