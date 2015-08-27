@@ -8,6 +8,12 @@ FILES_TO_SKIP=29
 scriptPath = os.path.dirname(os.path.abspath(__file__))
 file_index = 0
 
+# Generate config.hpp
+#
+#a = subprocess.call(["git", "describe", "--tags", "--always", "--abbrev=0"])
+#b = subprocess.call(["git", "rev-parse", "HEAD"])
+subprocess.call(["python", "scripts/build-version.py", "v0.5.2", "0fcfafe7b11df0555cf9ac728e7488b1f4de5428"])
+
 for root, dirs, files in os.walk("src"):
   
   for fname in files:
