@@ -12,7 +12,11 @@ file_index = 0
 #
 #a = subprocess.call(["git", "describe", "--tags", "--always", "--abbrev=0"])
 #b = subprocess.call(["git", "rev-parse", "HEAD"])
-subprocess.call(["python", "scripts/build-version.py", "v0.5.2", "0fcfafe7b11df0555cf9ac728e7488b1f4de5428"])
+subprocess.call(["python", "scripts/build-version.py", scriptPath, "v0.5.2", "0fcfafe7b11df0555cf9ac728e7488b1f4de5428"])
+
+# Generate shaders
+#
+
 
 for root, dirs, files in os.walk("src"):
   
