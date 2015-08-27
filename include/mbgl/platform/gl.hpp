@@ -5,6 +5,14 @@
 #include <stdexcept>
 #include <vector>
 
+#ifdef _WIN32
+# define WIN32_LEAN_AND_MEAN
+# include <windows.h>
+// keep these terms usable
+# undef near
+# undef far
+#endif
+
 #if __APPLE__
     #include "TargetConditionals.h"
     #if TARGET_OS_IPHONE
