@@ -18,7 +18,7 @@ def mkdir_p(path):
 # Load all shaders
 shaders = {}
 for file_name in file_names:
-    parts = re.search('/(\w+)\.(vertex|fragment)\.glsl$', file_name)
+    parts = re.search('(\w+)\.(vertex|fragment)\.glsl$', file_name)
     if parts:
         shader_name = parts.group(1)
         shader_type = parts.group(2)

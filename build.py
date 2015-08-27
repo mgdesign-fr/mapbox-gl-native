@@ -14,10 +14,27 @@ file_index = 0
 #b = subprocess.call(["git", "rev-parse", "HEAD"])
 subprocess.call(["python", "scripts/build-version.py", scriptPath, "v0.5.2", "0fcfafe7b11df0555cf9ac728e7488b1f4de5428"])
 
+# Find shaders
+#
+shaderList = []
+for root, dirs, files in os.walk(r"src"):
+  for fname in files:
+    name, ext = os.path.splitext(fname)
+  
+    if not ext.lower() in [".glsl"]:
+      continue
+    else:
+      fpath = os.path.join(scriptPath, root, fname)
+      shaderList.append(fpath)
+
 # Generate shaders
 #
+build_shaders_cmd = ["python", "scripts/build-shaders.py", scriptPath] + shaderList
+print build_shaders_cmd
+subprocess.call(build_shaders_cmd)
 
-
+# Compile source files
+#
 for root, dirs, files in os.walk("src"):
   
   for fname in files:
