@@ -4,6 +4,8 @@ import os, subprocess
 
 CLANG="clang"
 
+scriptPath = os.path.dirname(os.path.abspath(__file__))
+
 for root, dirs, files in os.walk("src"):
   for fname in files:
     name, ext = os.path.splitext(fname)
@@ -21,8 +23,10 @@ for root, dirs, files in os.walk("src"):
       clang_cmd += [ "clang" ]
 
     clang_cmd += ["-S"]
-    clang_cmd += [r"-ID:\Projets\LNPN\mapbox-gl-native\src\src", r"-ID:\Projets\LNPN\mapbox-gl-native\src\include"]
+    clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
+    #clang_cmd += [r"-ID:\projets\projet_LNPN\tmp_\mapboxgl_natif_mingw\src", r"-ID:\projets\projet_LNPN\tmp_\mapboxgl_natif_mingw\include"]
     clang_cmd += [fpath]
+    #clang_cmd += ["--verbose"]
 
     print clang_cmd
     subprocess.call(clang_cmd)
