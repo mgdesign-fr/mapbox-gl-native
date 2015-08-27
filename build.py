@@ -71,6 +71,7 @@ for src_folder in src_folders:
       #clang_cmd += ["-S"]
       clang_cmd += ["-DNDEBUG", "-O3"]
       clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD"]                                              # NOTE(nico) - from osx build log
+      clang_cmd += ["-femulated-tls"]                                                                       # NOTE(nico) - ?test? for 'undefined reference to `std::__once_call'
       clang_cmd += ["-pthread"]                                                                             # NOTE(nico) - otherwise linking fails
       clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
@@ -97,9 +98,8 @@ clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs
 clang_cmd += [ "-o", "toto.dll" ]
 clang_cmd += [ "--verbose" ]
 clang_cmd += [ "-Wl,--verbose" ]
-#clang_cmd += [ "-L" ]
 clang_cmd += OBJs
-clang_cmd += [ "-lz", "-lzip", "-ljpg", "-lpng", "-lsqlite3" ]           # IMPORTANT(nico) - must come *after* the input files
+clang_cmd += [ "-lz", "-lzip", "-lcurl", "-ljpeg", "-lpng", "-lsqlite3" ]           # IMPORTANT(nico) - must come *after* the input files
 clang_cmd += [ "-luv" ]
 print clang_cmd
 subprocess.call(clang_cmd)
