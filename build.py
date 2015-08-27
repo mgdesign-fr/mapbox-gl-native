@@ -23,8 +23,9 @@ for root, dirs, files in os.walk("src"):
       clang_cmd += [ "clang" ]
 
     clang_cmd += ["-S"]
+    clang_cmd += ["-D_USE_MATH_DEFINES"]      # NOTE(nico) - to define M_PI
     clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
-    #clang_cmd += [r"-ID:\projets\projet_LNPN\tmp_\mapboxgl_natif_mingw\src", r"-ID:\projets\projet_LNPN\tmp_\mapboxgl_natif_mingw\include"]
+    clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
     clang_cmd += [fpath]
     #clang_cmd += ["--verbose"]
 

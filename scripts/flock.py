@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-import fcntl, os, subprocess, sys, errno
+import os, subprocess, sys, errno
+
+if os.name == 'nt':
+    import msvcrt
+else:
+    import fcntl
 
 # from http://stackoverflow.com/a/600612
 def mkdir_p(path):
@@ -13,8 +18,23 @@ def mkdir_p(path):
 
 def flock(lockfile, cmd_list, verbose = False):
     mkdir_p(os.path.dirname(lockfile))
-    fd = os.open(lockfile, os.O_RDONLY | os.O_NOCTTY | os.O_CREAT, 0o666)
-    fcntl.flock(fd, fcntl.LOCK_EX)
+
+    if os.name == 'nt':
+        print "*"*80
+        print lockfile, cmd_list
+
+        fd = open(lockfile, 'w+')
+        msvcrt.locking(fd.fileno(), msvcrt.LK_LOCK, 2147483647L)
+    else:
+        fd = os.open(lockfile, os.O_RDONLY | os.O_NOCTTY | os.O_CREAT, 0o666)
+        fcntl.flock(fd, fcntl.LOCK_EX)
+
+    if os.name == 'nt':
+        orig_cmd_list = '-c "' + ' '.join(cmd_list) + '"'
+        cmd_list = []
+        cmd_list.append(r'"C:\Program Files (x86)\Git\bin\sh.exe"')
+        cmd_list.append(orig_cmd_list)
+
     if verbose:
         print(' '.join(cmd_list))
     return subprocess.call(cmd_list)
