@@ -13,9 +13,14 @@ for root, dirs, files in os.walk("src"):
     is_cpp = ext.lower() in [".cpp"]
 
     fpath = os.path.join(root, fname)
-    clang_cmd = [CLANG, "-S" ]
+    
+    clang_cmd = []
     if is_cpp:
-      clang_cmd += [ "-std=c++14" ]
+      clang_cmd += [ "clang++", "-std=c++14" ]
+    else:
+      clang_cmd += [ "clang" ]
+
+    clang_cmd += ["-S"]
     clang_cmd += [r"-ID:\Projets\LNPN\mapbox-gl-native\src\src", r"-ID:\Projets\LNPN\mapbox-gl-native\src\include"]
     clang_cmd += [fpath]
 
