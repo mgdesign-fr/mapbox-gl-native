@@ -94,13 +94,13 @@ assert len(OBJs) == len(set(OBJs))
 #
 clang_cmd = [ "clang++", "-std=c++1y", "-shared", "-g", "-pthread" ]
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
-clang_cmd += [ "-lz", "-lzip", "-lpng", "-lsqlite3" ]
-clang_cmd += [ "-luv" ]
 clang_cmd += [ "-o", "toto.dll" ]
 clang_cmd += [ "--verbose" ]
 clang_cmd += [ "-Wl,--verbose" ]
 #clang_cmd += [ "-L" ]
 clang_cmd += OBJs
+clang_cmd += [ "-lz", "-lzip", "-ljpg", "-lpng", "-lsqlite3" ]           # IMPORTANT(nico) - must come *after* the input files
+clang_cmd += [ "-luv" ]
 print clang_cmd
 subprocess.call(clang_cmd)
 
