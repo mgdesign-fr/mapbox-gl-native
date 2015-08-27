@@ -51,8 +51,11 @@ jfieldID latLngZoomLongitudeId = nullptr;
 jfieldID latLngZoomZoomId = nullptr;
 
 jclass bboxClass = nullptr;
-jfieldID bboxSWId = nullptr;
-jfieldID bboxNEId = nullptr;
+jmethodID bboxConstructorId = nullptr;
+jfieldID bboxLatNorthId = nullptr;
+jfieldID bboxLatSouthId = nullptr;
+jfieldID bboxLonEastId = nullptr;
+jfieldID bboxLonWestId = nullptr;
 
 jclass markerClass = nullptr;
 jmethodID markerConstructorId = nullptr;
@@ -974,62 +977,60 @@ void JNICALL nativeRemoveAnnotations(JNIEnv *env, jobject obj, jlong nativeMapVi
     nativeMapView->getMap().removeAnnotations(ids);
 }
 
-jobject JNICALL nativeGetAnnotationsInBounds(JNIEnv *env, jobject obj, jlong nativeMapViewPtr, jobject bbox) {
+jlongArray JNICALL nativeGetAnnotationsInBounds(JNIEnv *env, jobject obj, jlong nativeMapViewPtr, jobject bbox) {
     mbgl::Log::Debug(mbgl::Event::JNI, "nativeGetAnnotationsInBounds");
-    assert(nativeMapViewPtr != 0);
-    NativeMapView *nativeMapView = reinterpret_cast<NativeMapView *>(nativeMapViewPtr);
-
-    if (env->ExceptionCheck() || (bbox == nullptr)) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jobject sw = env->GetObjectField(bbox, bboxSWId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble swLat = env->GetDoubleField(sw, latLngLatitudeId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble swLon = env->GetDoubleField(sw, latLngLongitudeId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jobject ne = env->GetObjectField(bbox, bboxNEId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble neLat = env->GetDoubleField(ne, latLngLatitudeId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    jdouble neLon = env->GetDoubleField(ne, latLngLongitudeId);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        return nullptr;
-    }
-
-    mbgl::LatLngBounds bounds;
-    bounds.sw = { swLat, swLon };
-    bounds.ne = { neLat, neLon };
+//    assert(nativeMapViewPtr != 0);
+//     NativeMapView *nativeMapView = reinterpret_cast<NativeMapView *>(nativeMapViewPtr);
+//
+//     if (env->ExceptionCheck() || (bbox == nullptr)) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     jobject sw = env->GetObjectField(bbox, bboxSWId);
+//     if (env->ExceptionCheck()) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     jdouble swLat = env->GetDoubleField(sw, latLngLatitudeId);
+//     if (env->ExceptionCheck()) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     jdouble swLon = env->GetDoubleField(sw, latLngLongitudeId);
+//     if (env->ExceptionCheck()) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     jobject ne = env->GetObjectField(bbox, bboxNEId);
+//     if (env->ExceptionCheck()) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     jdouble neLat = env->GetDoubleField(ne, latLngLatitudeId);
+//     if (env->ExceptionCheck()) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     jdouble neLon = env->GetDoubleField(ne, latLngLongitudeId);
+//     if (env->ExceptionCheck()) {
+//         env->ExceptionDescribe();
+//         return nullptr;
+//     }
+//
+//     mbgl::LatLngBounds bounds;
+//     bounds.sw = { swLat, swLon };
+//     bounds.ne = { neLat, neLon };
 
     // assume only points for now
-    std::vector<uint32_t> annotations = nativeMapView->getMap().getAnnotationsInBounds(bounds, mbgl::AnnotationType::Point);
+    std::vector<uint32_t> annotations; // = nativeMapView->getMap().getAnnotationsInBounds(bounds, mbgl::AnnotationType::Point);
 
-    jobject ret = std_vector_uint_to_jobject(env, annotations);
-
-    return ret;
+    return std_vector_uint_to_jobject(env, annotations);
 }
 
 void JNICALL nativeSetSprite(JNIEnv *env, jobject obj, jlong nativeMapViewPtr,
@@ -1314,14 +1315,32 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return JNI_ERR;
     }
 
-    bboxSWId = env->GetFieldID(bboxClass, "sw", "Lcom/mapbox/mapboxgl/geometry/LatLng;");
-    if (bboxSWId == nullptr) {
+    bboxConstructorId = env->GetMethodID(bboxClass, "<init>", "(DDDD)V");
+    if (bboxConstructorId == nullptr) {
         env->ExceptionDescribe();
         return JNI_ERR;
     }
 
-    bboxNEId = env->GetFieldID(bboxClass, "ne", "Lcom/mapbox/mapboxgl/geometry/LatLng;");
-    if (bboxNEId == nullptr) {
+    bboxLatNorthId = env->GetFieldID(bboxClass, "mLatNorth", "D");
+    if (bboxLatNorthId == nullptr) {
+        env->ExceptionDescribe();
+        return JNI_ERR;
+    }
+
+    bboxLatSouthId = env->GetFieldID(bboxClass, "mLatSouth", "D");
+    if (bboxLatSouthId == nullptr) {
+        env->ExceptionDescribe();
+        return JNI_ERR;
+    }
+
+    bboxLonEastId = env->GetFieldID(bboxClass, "mLonEast", "D");
+    if (bboxLonEastId == nullptr) {
+        env->ExceptionDescribe();
+        return JNI_ERR;
+    }
+
+    bboxLonWestId = env->GetFieldID(bboxClass, "mLonWest", "D");
+    if (bboxLonWestId == nullptr) {
         env->ExceptionDescribe();
         return JNI_ERR;
     }
@@ -1676,7 +1695,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
          reinterpret_cast<void *>(&nativeAddPolygons)},
         {"nativeRemoveAnnotation", "(JJ)V", reinterpret_cast<void *>(&nativeRemoveAnnotation)},
         {"nativeRemoveAnnotations", "(J[J)V", reinterpret_cast<void *>(&nativeRemoveAnnotations)},
-        {"nativeGetAnnotationsInBounds", "(J)Lcom/mapbox/mapboxgl/geometry/BoundingBox;",
+        {"nativeGetAnnotationsInBounds", "(JLcom/mapbox/mapboxgl/geometry/BoundingBox;)[J",
          reinterpret_cast<void *>(&nativeGetAnnotationsInBounds)},
         {"nativeSetSprite", "(JLjava/lang/String;IIF[B)V", reinterpret_cast<void *>(&nativeSetSprite)},
         {"nativeOnLowMemory", "(J)V", reinterpret_cast<void *>(&nativeOnLowMemory)},
@@ -1884,10 +1903,13 @@ extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
     latLngZoomLatitudeId = nullptr;
     latLngZoomZoomId = nullptr;
 
-
     env->DeleteGlobalRef(bboxClass);
-    bboxSWId = nullptr;
-    bboxNEId = nullptr;
+    bboxClass = nullptr;
+    bboxConstructorId = nullptr;
+    bboxLatNorthId = nullptr;
+    bboxLatSouthId = nullptr;
+    bboxLonEastId = nullptr;
+    bboxLonWestId = nullptr;
 
     env->DeleteGlobalRef(markerClass);
     markerClass = nullptr;

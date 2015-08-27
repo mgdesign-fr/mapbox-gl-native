@@ -356,7 +356,7 @@ class NativeMapView {
         nativeRemoveAnnotations(mNativeMapViewPtr, ids);
     }
 
-    public List<Annotation> getAnnotationsInBounds(BoundingBox bbox) {
+    public long[] getAnnotationsInBounds(BoundingBox bbox) {
         return nativeGetAnnotationsInBounds(mNativeMapViewPtr, bbox);
     }
 
@@ -570,7 +570,7 @@ class NativeMapView {
 
     private native void nativeRemoveAnnotations(long nativeMapViewPtr, long[] id);
 
-    private native ArrayList<Annotation> nativeGetAnnotationsInBounds(long mNativeMapViewPtr, BoundingBox bbox);
+    private native long[] nativeGetAnnotationsInBounds(long mNativeMapViewPtr, BoundingBox bbox);
 
     private native void nativeSetSprite(long nativeMapViewPtr, String symbol,
                                         int width, int height, float scale, byte[] pixels);

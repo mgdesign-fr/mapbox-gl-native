@@ -430,7 +430,30 @@ public class MapView extends FrameLayout implements LocationListener {
     }
 
     public List<Annotation> getAnnotationsInBounds(BoundingBox bbox) {
-        return mNativeMapView.getAnnotationsInBounds(bbox);
+        List<Annotation> annotations = new ArrayList<>();
+
+//        long[] ids = mNativeMapView.getAnnotationsInBounds(bbox);
+
+        return annotations;
+
+
+//        for(int i=0; i < ids.  size(); i++) {
+//
+//
+//
+//            polygons.get(i).setId(ids[i]);
+//            polygons.get(i).setMapView(this);
+//            mAnnotations.add(polygons.get(i));
+//        }
+//
+//        return Collections.unmodifiableList(polygons);
+//
+//
+//
+//
+//
+//
+//        return mNativeMapView.getAnnotationsInBounds(bbox);
     }
 
     //
