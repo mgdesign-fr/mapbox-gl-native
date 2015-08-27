@@ -9,6 +9,7 @@ scriptPath = os.path.dirname(os.path.abspath(__file__))
 file_index = 0
 
 # Generate config.hpp
+# TODO destination should not be scriptPath but a deletable build directory
 #
 #a = subprocess.call(["git", "describe", "--tags", "--always", "--abbrev=0"])
 #b = subprocess.call(["git", "rev-parse", "HEAD"])
@@ -28,9 +29,9 @@ for root, dirs, files in os.walk(r"src"):
       shaderList.append(fpath)
 
 # Generate shaders
+# TODO destination should not be scriptPath but a deletable build directory
 #
 build_shaders_cmd = ["python", "scripts/build-shaders.py", scriptPath] + shaderList
-print build_shaders_cmd
 subprocess.call(build_shaders_cmd)
 
 # Compile source files
