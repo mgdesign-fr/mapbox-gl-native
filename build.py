@@ -32,6 +32,7 @@ for root, dirs, files in os.walk("src"):
 
     clang_cmd += ["-S"]
     clang_cmd += ["-D_USE_MATH_DEFINES"]      # NOTE(nico) - to define M_PI
+    clang_cmd += ["-DWIN32_LEAN_AND_MEAN"]    # NOTE(nico) - undefine 'near'/'far'
     clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
     clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
     clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
