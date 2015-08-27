@@ -37,57 +37,68 @@ subprocess.call(build_shaders_cmd)
 # Compile source files
 #
 OBJs = []
+src_folders = ["src", os.path.join("platform", "default")]
 
-for root, dirs, files in os.walk("src"):
-  
-  for fname in files:
-    name, ext = os.path.splitext(fname)
+for src_folder in src_folders:
 
-    if not ext.lower() in [".c", ".cpp"]:
-      continue
+  for root, dirs, files in os.walk(src_folder):
+    
+    for fname in files:
+      name, ext = os.path.splitext(fname)
 
-    in_path = os.path.join(root, fname)
-    out_path = os.path.join(scriptPath, "build", "%s.o" % name)
-    OBJs.append(out_path)
-   
-    if file_index < FILES_TO_SKIP:
+      if not ext.lower() in [".c", ".cpp"]:
+        continue
+
+      in_path = os.path.join(root, fname)
+      out_path = os.path.join(scriptPath, "build", "%s.o" % name)
+     
+      if file_index < FILES_TO_SKIP:
+        file_index += 1
+        continue
+
+      if os.path.exists(out_path):
+        OBJs.append(out_path)
+        continue
+
+      is_cpp = ext.lower() in [".cpp"]
+
+      clang_cmd = []
+      if is_cpp:
+        clang_cmd += [ "clang", "-std=c++1y" ]
+      else:
+        clang_cmd += [ "clang" ]
+
+      #clang_cmd += ["-S"]
+      clang_cmd += ["-DNDEBUG", "-O3"]
+      clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD"]                                              # NOTE(nico) - from osx build log
+      clang_cmd += ["-pthread"]                                                                             # NOTE(nico) - otherwise linking fails
+      clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
+      clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
+      clang_cmd += ["-I" + r"C:\mingw\lib\libzip\include"]                                                  # NOTE(nico) - ? for <zipconf.h>
+      clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
+      clang_cmd += ["-c", "-o", out_path]
+      clang_cmd += [in_path]
+      clang_cmd += ["--verbose"]
+
+      print file_index, "**", clang_cmd
+      code = subprocess.call(clang_cmd)
+      if code == 0:
+        OBJs.append(out_path)
+
       file_index += 1
-      continue
-
-    if os.path.exists(out_path):
-      continue
-
-    is_cpp = ext.lower() in [".cpp"]
-
-    clang_cmd = []
-    if is_cpp:
-      clang_cmd += [ "clang", "-std=c++1y" ]
-    else:
-      clang_cmd += [ "clang" ]
-
-    #clang_cmd += ["-S"]
-    clang_cmd += ["-DNDEBUG", "-O3"]
-    clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD", "-pthread"]
-    clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
-    clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
-    clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
-    clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
-    clang_cmd += ["-c", "-o", out_path]
-    clang_cmd += [in_path]
-    #clang_cmd += ["--verbose"]
-
-    print file_index, "**", clang_cmd
-    subprocess.call(clang_cmd)
-
-    file_index += 1
 
 assert len(OBJs) == len(set(OBJs))
 
 # Link DLL
 #
 clang_cmd = [ "clang++", "-std=c++1y", "-shared", "-g", "-pthread" ]
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
+clang_cmd += [ "-lz", "-lzip", "-lpng", "-lsqlite3" ]
+clang_cmd += [ "-luv" ]
 clang_cmd += [ "-o", "toto.dll" ]
 clang_cmd += [ "--verbose" ]
+clang_cmd += [ "-Wl,--verbose" ]
 #clang_cmd += [ "-L" ]
 clang_cmd += OBJs
 print clang_cmd
