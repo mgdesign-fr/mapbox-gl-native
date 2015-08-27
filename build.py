@@ -3,7 +3,7 @@
 import os, subprocess
 
 CLANG="clang"
-FILES_TO_SKIP=29
+FILES_TO_SKIP=0
 
 scriptPath = os.path.dirname(os.path.abspath(__file__))
 file_index = 0
@@ -44,27 +44,33 @@ for root, dirs, files in os.walk("src"):
     if not ext.lower() in [".c", ".cpp"]:
       continue
 
+    in_path = os.path.join(root, fname)
+    out_path = os.path.join(scriptPath, "build", "%s.o" % name)
+   
     if file_index < FILES_TO_SKIP:
       file_index += 1
       continue
 
+    if os.path.exists(out_path):
+      continue
+
     is_cpp = ext.lower() in [".cpp"]
 
-    fpath = os.path.join(root, fname)
-    
     clang_cmd = []
     if is_cpp:
-      clang_cmd += [ "clang++", "-std=c++1y" ]
+      clang_cmd += [ "clang", "-std=c++1y" ]
     else:
       clang_cmd += [ "clang" ]
 
-    clang_cmd += ["-S"]
-    clang_cmd += ["-D_USE_MATH_DEFINES"]      # NOTE(nico) - to define M_PI
-    clang_cmd += ["-DWIN32_LEAN_AND_MEAN"]    # NOTE(nico) - undefine 'near'/'far'
+    #clang_cmd += ["-S"]
+    clang_cmd += ["-DNDEBUG", "-O3"]
+    clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD"]
+    clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
     clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
     clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
     clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
-    clang_cmd += [fpath]
+    clang_cmd += ["-c", "-o", out_path]
+    clang_cmd += [in_path]
     #clang_cmd += ["--verbose"]
 
     print file_index, "**", clang_cmd
