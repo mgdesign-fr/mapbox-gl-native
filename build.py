@@ -67,7 +67,7 @@ for root, dirs, files in os.walk("src"):
 
     #clang_cmd += ["-S"]
     clang_cmd += ["-DNDEBUG", "-O3"]
-    clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD"]
+    clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD", "-pthread"]
     clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
     clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
     clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
@@ -85,11 +85,10 @@ assert len(OBJs) == len(set(OBJs))
 
 # Link DLL
 #
-clang_cmd = [ "clang++", "-std=c++1y", "-shared", "-g" ]
+clang_cmd = [ "clang++", "-std=c++1y", "-shared", "-g", "-pthread" ]
 clang_cmd += [ "-o", "toto.dll" ]
 clang_cmd += [ "--verbose" ]
 #clang_cmd += [ "-L" ]
-clang_cmd += [ "-lpthread" ]
 clang_cmd += OBJs
 print clang_cmd
 subprocess.call(clang_cmd)
