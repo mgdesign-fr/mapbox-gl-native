@@ -432,28 +432,14 @@ public class MapView extends FrameLayout implements LocationListener {
     public List<Annotation> getAnnotationsInBounds(BoundingBox bbox) {
         List<Annotation> annotations = new ArrayList<>();
 
-//        long[] ids = mNativeMapView.getAnnotationsInBounds(bbox);
+        long[] ids = mNativeMapView.getAnnotationsInBounds(bbox);
+
+
+
 
         return annotations;
 
 
-//        for(int i=0; i < ids.  size(); i++) {
-//
-//
-//
-//            polygons.get(i).setId(ids[i]);
-//            polygons.get(i).setMapView(this);
-//            mAnnotations.add(polygons.get(i));
-//        }
-//
-//        return Collections.unmodifiableList(polygons);
-//
-//
-//
-//
-//
-//
-//        return mNativeMapView.getAnnotationsInBounds(bbox);
     }
 
     //
@@ -946,6 +932,22 @@ public class MapView extends FrameLayout implements LocationListener {
         public boolean onSingleTapUp(MotionEvent e) {
             // Cancel any animation
             mNativeMapView.cancelTransitions();
+
+            // Select or deselect point annotations
+            PointF tapPoint = new PointF(e.getX(), e.getY());
+
+            float toleranceWidth = 40;
+            float toleranceHeight = 60;
+
+            PointF tr = new PointF(tapPoint.x + toleranceWidth / 2, tapPoint.y + 2 * toleranceHeight / 3);
+            PointF bl = new PointF(tapPoint.x - toleranceWidth / 2, tapPoint.y - 1 * toleranceHeight / 3);
+
+            LatLng sw = fromScreenLocation(bl);
+            LatLng ne = fromScreenLocation(tr);
+
+            BoundingBox bbox = new BoundingBox(ne, sw);
+
+            List<Annotation> annotations = getAnnotationsInBounds(bbox);
 
             return true;
         }
