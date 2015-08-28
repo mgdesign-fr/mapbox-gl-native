@@ -936,8 +936,8 @@ public class MapView extends FrameLayout implements LocationListener {
             // Select or deselect point annotations
             PointF tapPoint = new PointF(e.getX(), e.getY());
 
-            float toleranceWidth = 40;
-            float toleranceHeight = 60;
+            float toleranceWidth = 40 * mScreenDensity;
+            float toleranceHeight = 60 * mScreenDensity;
 
             PointF tr = new PointF(tapPoint.x + toleranceWidth / 2, tapPoint.y + 2 * toleranceHeight / 3);
             PointF bl = new PointF(tapPoint.x - toleranceWidth / 2, tapPoint.y - 1 * toleranceHeight / 3);
