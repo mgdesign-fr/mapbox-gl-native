@@ -979,56 +979,44 @@ void JNICALL nativeRemoveAnnotations(JNIEnv *env, jobject obj, jlong nativeMapVi
 
 jlongArray JNICALL nativeGetAnnotationsInBounds(JNIEnv *env, jobject obj, jlong nativeMapViewPtr, jobject bbox) {
     mbgl::Log::Debug(mbgl::Event::JNI, "nativeGetAnnotationsInBounds");
-//    assert(nativeMapViewPtr != 0);
-//     NativeMapView *nativeMapView = reinterpret_cast<NativeMapView *>(nativeMapViewPtr);
-//
-//     if (env->ExceptionCheck() || (bbox == nullptr)) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     jobject sw = env->GetObjectField(bbox, bboxSWId);
-//     if (env->ExceptionCheck()) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     jdouble swLat = env->GetDoubleField(sw, latLngLatitudeId);
-//     if (env->ExceptionCheck()) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     jdouble swLon = env->GetDoubleField(sw, latLngLongitudeId);
-//     if (env->ExceptionCheck()) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     jobject ne = env->GetObjectField(bbox, bboxNEId);
-//     if (env->ExceptionCheck()) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     jdouble neLat = env->GetDoubleField(ne, latLngLatitudeId);
-//     if (env->ExceptionCheck()) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     jdouble neLon = env->GetDoubleField(ne, latLngLongitudeId);
-//     if (env->ExceptionCheck()) {
-//         env->ExceptionDescribe();
-//         return nullptr;
-//     }
-//
-//     mbgl::LatLngBounds bounds;
-//     bounds.sw = { swLat, swLon };
-//     bounds.ne = { neLat, neLon };
+   assert(nativeMapViewPtr != 0);
+    NativeMapView *nativeMapView = reinterpret_cast<NativeMapView *>(nativeMapViewPtr);
+
+    if (env->ExceptionCheck() || (bbox == nullptr)) {
+        env->ExceptionDescribe();
+        return nullptr;
+    }
+
+    jdouble swLat = env->GetDoubleField(bbox, bboxLatSouthId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return nullptr;
+    }
+
+    jdouble swLon = env->GetDoubleField(bbox, bboxLonWestId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return nullptr;
+    }
+
+    jdouble neLat = env->GetDoubleField(bbox, bboxLatNorthId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return nullptr;
+    }
+
+    jdouble neLon = env->GetDoubleField(bbox, bboxLonEastId);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        return nullptr;
+    }
+
+    mbgl::LatLngBounds bounds;
+    bounds.sw = { swLat, swLon };
+    bounds.ne = { neLat, neLon };
 
     // assume only points for now
-    std::vector<uint32_t> annotations; // = nativeMapView->getMap().getAnnotationsInBounds(bounds, mbgl::AnnotationType::Point);
+    std::vector<uint32_t> annotations = nativeMapView->getMap().getAnnotationsInBounds(bounds, mbgl::AnnotationType::Point);
 
     return std_vector_uint_to_jobject(env, annotations);
 }
