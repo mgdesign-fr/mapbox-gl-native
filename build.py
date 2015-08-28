@@ -94,7 +94,7 @@ for src_folder in src_folders:
       clang_cmd += ["-I" + os.path.join(buildGenPath, "include")]                                           # NOTE(jeff) - for mbgl generated files
       clang_cmd += ["-c", "-o", out_path]
       clang_cmd += [in_path]
-      clang_cmd += ["--verbose"]
+      #clang_cmd += ["--verbose"]
 
       print file_index, "**", clang_cmd
       code = subprocess.call(clang_cmd)
@@ -109,12 +109,13 @@ assert len(OBJs) == len(set(OBJs))
 #
 clang_cmd = [ "g++", "-std=c++1y", "-shared", "-g", "-pthread" ]
 clang_cmd += [ "-static" ]
+clang_cmd += [ "-Wl,--export-all-symbols", "-Wl,--out-implib=mapbox-gl.dll.a" ]                                  # NOTE(nico) - should be 'hidden' but...
 #clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
 clang_cmd += [ "-o", "mapbox-gl.dll" ]
-clang_cmd += [ "--verbose" ]
-clang_cmd += [ "-Wl,--verbose" ]
+#clang_cmd += [ "--verbose" ]
+#clang_cmd += [ "-Wl,--verbose" ]
 clang_cmd += OBJs
 # IMPORTANT(nico) - must come *after* the input files
 # IMPORTANT(nico) - order is important for the linker
@@ -125,6 +126,40 @@ clang_cmd += [ "-lz", "-lzip", "-lcurl", "-ljpeg", "-lpng", "-lsqlite3", "-lglfw
 clang_cmd += [ "-lwldap32"]                                                                                # NOTE(nico) - for static lcurl
 clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
 clang_cmd += [ "-lopengl32", "-lgdi32" ]
+print clang_cmd
+subprocess.call(clang_cmd)
+
+# Link `render.exe`
+#
+clang_cmd = [ "g++", "-std=c++1y", "-g", "-pthread" ]
+clang_cmd += [ "bin\\render.cpp" ]
+#clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
+clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
+clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
+clang_cmd += [ "-L." ]
+clang_cmd += [ "-o", "render.exe" ]
+#clang_cmd += [ "--verbose" ]
+#clang_cmd += [ "-Wl,--verbose" ]
+'''
+clang_cmd += OBJs
+'''
+# IMPORTANT(nico) - must come *after* the input files
+# IMPORTANT(nico) - order is important for the linker
+clang_cmd += [ "-luv" ]
+clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
+clang_cmd += [ "-lmapbox-gl" ]
+'''
+clang_cmd += [ "-lnu" ]
+clang_cmd += [ "-lglew32" ]
+clang_cmd += [ "-lz", "-lzip", "-lcurl", "-ljpeg", "-lpng", "-lsqlite3", "-lglfw3" ]
+clang_cmd += [ "-lwldap32"]                                                                                # NOTE(nico) - for static lcurl
+clang_cmd += [ "-lopengl32", "-lgdi32" ]
+'''
 print clang_cmd
 subprocess.call(clang_cmd)
 
