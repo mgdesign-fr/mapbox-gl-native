@@ -6,14 +6,15 @@ CLANG="clang"
 FILES_TO_SKIP=0
 
 scriptPath = os.path.dirname(os.path.abspath(__file__))
+buildPath = os.path.join(scriptPath, "build", "mingw")
+buildGenPath = os.path.join(buildPath, "gen")
 file_index = 0
 
 # Generate config.hpp
-# TODO destination should not be scriptPath but a deletable build directory
 #
 #a = subprocess.call(["git", "describe", "--tags", "--always", "--abbrev=0"])
 #b = subprocess.call(["git", "rev-parse", "HEAD"])
-subprocess.call(["python", "scripts/build-version.py", scriptPath, "v0.5.2", "0fcfafe7b11df0555cf9ac728e7488b1f4de5428"])
+subprocess.call(["python", "scripts/build-version.py", buildGenPath, "v0.5.2", "0fcfafe7b11df0555cf9ac728e7488b1f4de5428"])
 
 # Find shaders
 #
@@ -29,15 +30,14 @@ for root, dirs, files in os.walk(r"src"):
       shaderList.append(fpath)
 
 # Generate shaders
-# TODO destination should not be scriptPath but a deletable build directory
 #
-build_shaders_cmd = ["python", "scripts/build-shaders.py", scriptPath] + shaderList
+build_shaders_cmd = ["python", "scripts/build-shaders.py", buildGenPath] + shaderList
 subprocess.call(build_shaders_cmd)
 
 # Compile source files
 #
 OBJs = []
-src_folders = ["src", os.path.join("platform", "default")]
+src_folders = ["src", os.path.join("platform", "default"), buildGenPath]
 
 EXCLUDED_FILES = [ "asset_request_zip.cpp" ]
 
@@ -56,7 +56,7 @@ for src_folder in src_folders:
         continue
 
       in_path = os.path.join(root, fname)
-      out_path = os.path.join(scriptPath, "build", "%s.o" % name)
+      out_path = os.path.join(buildPath, "%s.o" % name)
      
       if file_index < FILES_TO_SKIP:
         file_index += 1
@@ -90,6 +90,7 @@ for src_folder in src_folders:
       clang_cmd += ["-I" + r"C:\mingw\lib\libzip\include"]                                                  # NOTE(nico) - ? for <zipconf.h>
       clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
       clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
+      clang_cmd += ["-I" + buildGenPath]                                                                    # NOTE(jeff) - for mbgl generated files
       clang_cmd += ["-c", "-o", out_path]
       clang_cmd += [in_path]
       clang_cmd += ["--verbose"]
