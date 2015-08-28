@@ -90,7 +90,7 @@ for src_folder in src_folders:
       clang_cmd += ["-I" + r"C:\mingw\lib\libzip\include"]                                                  # NOTE(nico) - ? for <zipconf.h>
       clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
       clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
-      clang_cmd += ["-I" + buildGenPath]                                                                    # NOTE(jeff) - for mbgl generated files
+      clang_cmd += ["-I" + os.path.join(buildGenPath, "include")]                                           # NOTE(jeff) - for mbgl generated files
       clang_cmd += ["-c", "-o", out_path]
       clang_cmd += [in_path]
       clang_cmd += ["--verbose"]
@@ -111,7 +111,7 @@ clang_cmd += [ "-static" ]
 #clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
-clang_cmd += [ "-o", "toto.dll" ]
+clang_cmd += [ "-o", "mapbox-gl.dll" ]
 clang_cmd += [ "--verbose" ]
 clang_cmd += [ "-Wl,--verbose" ]
 clang_cmd += OBJs

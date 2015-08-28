@@ -21,7 +21,7 @@ Right now, the DLL :
 # Environment
 
 We're using :
-* MinGW-w64 (from http://sourceforge.net/projects/mingw-w64/files/latest/download), which includes the 'correct' gcc
+* MinGW-w64 (`4.9.3-i686-posix-dwarf-0` from http://sourceforge.net/projects/mingw-w64/files/latest/download), which includes the 'correct' gcc
 * gcc 4.9.3 (as we had problems with `clang`, see below)
 
 As we don't know any `gyp` or `make` magic, we do not use them at the moment. We created a small and dumb `build.py` script to do the job.
@@ -29,6 +29,8 @@ As we don't know any `gyp` or `make` magic, we do not use them at the moment. We
 TODO Folder structure (`deps`)
 
 ## Building/installing dependencies
+
+TODO list used versions
 
 1. `libpng`
   ```
