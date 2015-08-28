@@ -76,13 +76,14 @@ for src_folder in src_folders:
         clang_cmd += [ "gcc" ]
 
       #clang_cmd += ["-S"]
+      #clang_cmd += ["-E"]
       clang_cmd += ["-DNDEBUG", "-O3"]
       clang_cmd += ["-fexceptions"]                                                                         # NOTE(nico) - from osx build log
       #clang_cmd += ["-fPIC"]                                                                               # NOTE(nico) - from osx build log - useless for win32
       #clang_cmd += ["-femulated-tls"]                                                                      # NOTE(nico) - ?test? for 'undefined reference to `std::__once_call'
       clang_cmd += ["-pthread"]                                                                             # NOTE(nico) - otherwise linking fails
       clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
-      clang_cmd += ["-DCURL_STATICLIB", "-DZIP_EXTERN"]                                                     # NOTE(nico) - for static linking
+      clang_cmd += ["-DCURL_STATICLIB", "-DZIP_EXTERN="]                                                    # NOTE(nico) - for static linking
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
       #clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
