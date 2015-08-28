@@ -6,6 +6,7 @@
 #ifdef NVIDIA
 #define GLFW_INCLUDE_ES2
 #endif
+#define GLFW_INCLUDE_NONE           // important to let gl.hpp include the proper GL header for the platform
 #include <GLFW/glfw3.h>
 
 #include <atomic>

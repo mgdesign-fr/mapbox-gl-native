@@ -39,12 +39,18 @@ subprocess.call(build_shaders_cmd)
 OBJs = []
 src_folders = ["src", os.path.join("platform", "default")]
 
+EXCLUDED_FILES = [ "asset_request_zip.cpp" ]
+
 for src_folder in src_folders:
 
   for root, dirs, files in os.walk(src_folder):
     
     for fname in files:
       name, ext = os.path.splitext(fname)
+
+      if fname in EXCLUDED_FILES:
+        print "skipping '%s'" % os.path.join(root, fname)
+        continue
 
       if not ext.lower() in [".c", ".cpp"]:
         continue
@@ -64,19 +70,25 @@ for src_folder in src_folders:
 
       clang_cmd = []
       if is_cpp:
-        clang_cmd += [ "clang", "-std=c++1y" ]
+        clang_cmd += [ "gcc", "-std=c++14" ]
+        clang_cmd += ["-frtti"]                                                                             # NOTE(nico) - from osx build log
       else:
-        clang_cmd += [ "clang" ]
+        clang_cmd += [ "gcc" ]
 
       #clang_cmd += ["-S"]
       clang_cmd += ["-DNDEBUG", "-O3"]
-      clang_cmd += ["-frtti", "-fexceptions", "-fPIC", "-MMD"]                                              # NOTE(nico) - from osx build log
-      clang_cmd += ["-femulated-tls"]                                                                       # NOTE(nico) - ?test? for 'undefined reference to `std::__once_call'
+      clang_cmd += ["-fexceptions"]                                                                         # NOTE(nico) - from osx build log
+      #clang_cmd += ["-fPIC"]                                                                               # NOTE(nico) - from osx build log - useless for win32
+      #clang_cmd += ["-femulated-tls"]                                                                      # NOTE(nico) - ?test? for 'undefined reference to `std::__once_call'
       clang_cmd += ["-pthread"]                                                                             # NOTE(nico) - otherwise linking fails
       clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
+      clang_cmd += ["-DCURL_STATICLIB", "-DZIP_EXTERN"]                                                     # NOTE(nico) - for static linking
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
-      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
+      #clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
       clang_cmd += ["-I" + r"C:\mingw\lib\libzip\include"]                                                  # NOTE(nico) - ? for <zipconf.h>
+      clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
       clang_cmd += ["-I" + r"M:\boost_1_57\include\boost-1_57"]                                             # TODO(nico) put in 'deps' ?
       clang_cmd += ["-c", "-o", out_path]
       clang_cmd += [in_path]
@@ -93,14 +105,24 @@ assert len(OBJs) == len(set(OBJs))
 
 # Link DLL
 #
-clang_cmd = [ "clang++", "-std=c++1y", "-shared", "-g", "-pthread" ]
-clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
+clang_cmd = [ "g++", "-std=c++1y", "-shared", "-g", "-pthread" ]
+clang_cmd += [ "-static" ]
+#clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
 clang_cmd += [ "-o", "toto.dll" ]
 clang_cmd += [ "--verbose" ]
 clang_cmd += [ "-Wl,--verbose" ]
 clang_cmd += OBJs
-clang_cmd += [ "-lz", "-lzip", "-lcurl", "-ljpeg", "-lpng", "-lsqlite3" ]           # IMPORTANT(nico) - must come *after* the input files
+# IMPORTANT(nico) - must come *after* the input files
+# IMPORTANT(nico) - order is important for the linker
 clang_cmd += [ "-luv" ]
+clang_cmd += [ "-lnu" ]
+clang_cmd += [ "-lglew32" ]
+clang_cmd += [ "-lz", "-lzip", "-lcurl", "-ljpeg", "-lpng", "-lsqlite3", "-lglfw3" ]
+clang_cmd += [ "-lwldap32"]                                                                                # NOTE(nico) - for static lcurl
+clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
+clang_cmd += [ "-lopengl32", "-lgdi32" ]
 print clang_cmd
 subprocess.call(clang_cmd)
 

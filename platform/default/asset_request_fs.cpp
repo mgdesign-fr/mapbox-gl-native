@@ -7,6 +7,7 @@
 
 #include <uv.h>
 
+#include <fcntl.h>
 #include <cassert>
 #include <limits>
 

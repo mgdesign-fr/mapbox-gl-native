@@ -9,6 +9,7 @@
 #include <uv.h>
 #include "uv_zip.h"
 
+#include <fcntl.h>
 #include <map>
 #include <cassert>
 #include <forward_list>
