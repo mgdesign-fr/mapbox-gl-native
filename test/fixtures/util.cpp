@@ -20,12 +20,14 @@ namespace test {
 pid_t startServer(const char *executable)
 {
   pid_t pid;
+  printf("* could not startServer on _WIN32\n"); fflush(stdout);
   return pid;
 }
 
 // TODO
 void stopServer(pid_t pid)
 {
+    printf("* could not stopServer on _WIN32\n"); fflush(stdout);
 }
 
 #else
