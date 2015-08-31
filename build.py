@@ -4,8 +4,11 @@ import os, subprocess
 
 UNIT_TESTS=None
 UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc"]
-# "glyph_store.cpp" and "thread.cpp" > crash gdb
-UNIT_TESTS += ["geo.cpp", "glyph_store.cpp", "sprite_atlas.cpp", "sprite_image.cpp", "sprite_parser.cpp", "sprite_store.cpp", "thread.cpp", "work_queue.cpp"]
+UNIT_TESTS += ["sprite_atlas.cpp", "sprite_image.cpp", "sprite_parser.cpp", "sprite_store.cpp"]
+UNIT_TESTS += ["annotations.cpp", "api_misuse.cpp", "repeated_render.cpp", "set_style.cpp"]
+UNIT_TESTS += ["assert.cpp", "bilinear.cpp", "binpack.cpp", "clip_ids.cpp", "comparisons.cpp", "enums.cpp", "functions.cpp", "geo.cpp", "map.cpp", "map_context.cpp", "mapbox.cpp", "merge_lines.cpp", "style_parser.cpp", "test_conversions.cpp", "thread.cpp", "tile.cpp", "transform.cpp", "variant.cpp", "work_queue.cpp"]
+# needs server # UNIT_TESTS += ["cache_response.cpp", "cache_revalidate.cpp", "database.cpp", "directory_reading.cpp", "file_reading.cpp", "http_cancel.cpp", "http_coalescing.cpp"] # ...
+UNIT_TESTS += ["glyph_store.cpp", "pending_resources.cpp", "resources_loading.cpp", "sprite.cpp"]
 BUILD_RENDER_EXE = UNIT_TESTS is None
 LINK_MAPBOX_GL_DLL = UNIT_TESTS is None
 
