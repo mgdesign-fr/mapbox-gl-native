@@ -2,10 +2,11 @@
 
 import os, subprocess
 
-#UNIT_TEST="work_queue.cpp"
-UNIT_TEST=None
-BUILD_RENDER_EXE = UNIT_TEST is None
-LINK_MAPBOX_GL_DLL = UNIT_TEST is None
+UNIT_TESTS=None
+UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc"]
+UNIT_TESTS += ["geo.cpp", "glyph_store.cpp", "sprite_atlas.cpp", "sprite_image.cpp", "sprite_parser.cpp", "sprite_store.cpp", "thread.cpp", "work_queue.cpp"]
+BUILD_RENDER_EXE = UNIT_TESTS is None
+LINK_MAPBOX_GL_DLL = UNIT_TESTS is None
 
 CLANG="clang"
 FILES_TO_SKIP=0
@@ -169,7 +170,10 @@ if BUILD_RENDER_EXE:
 #
 
 OBJs = []
-src_folders = ["test", os.path.join("deps", "gtest")]
+if UNIT_TESTS is None:
+  src_folders = []
+else:
+  src_folders = ["test", os.path.join("deps", "gtest")]
 EXCLUDED_FILES = []
 
 for src_folder in src_folders:
@@ -179,7 +183,7 @@ for src_folder in src_folders:
     for fname in files:
       name, ext = os.path.splitext(fname)
 
-      if fname in EXCLUDED_FILES:
+      if fname in EXCLUDED_FILES or (UNIT_TESTS is not None and fname not in UNIT_TESTS):
         print "skipping '%s'" % os.path.join(root, fname)
         continue
 
