@@ -120,6 +120,12 @@ make
   GLEW_DEST=/mingw make install
   ```
 
+1. `boost` 1.57.0
+  ```
+  cmd /k bootstrap.bat mingw
+  b2 install --with-program_options --prefix=/mingw toolset=gcc --layout=system \
+    variant=release -j 7 link=shared,static
+  ```
 
 # Notes about *our* MinGW installation
 
