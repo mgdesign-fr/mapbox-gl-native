@@ -68,6 +68,9 @@ HeadlessDisplay::HeadlessDisplay() {
         throw std::runtime_error("No Framebuffer configurations.");
     }
 #endif
+
+#if MBGL_USE_GLFW_WIN32
+#endif
 }
 
 HeadlessDisplay::~HeadlessDisplay() {
@@ -78,6 +81,9 @@ HeadlessDisplay::~HeadlessDisplay() {
 #if MBGL_USE_GLX
     XFree(fbConfigs);
     XCloseDisplay(xDisplay);
+#endif
+
+#if MBGL_USE_GLFW_WIN32
 #endif
 }
 

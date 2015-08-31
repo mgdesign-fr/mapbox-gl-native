@@ -3,6 +3,8 @@
 
 #ifdef __APPLE__
 #define MBGL_USE_CGL 1
+#elif _WIN32
+#define MBGL_USE_GLFW_WIN32 1
 #else
 #define GL_GLEXT_PROTOTYPES
 #define MBGL_USE_GLX 1
@@ -62,6 +64,10 @@ private:
     GLXFBConfig *fbConfigs = nullptr;
     GLXContext glContext = 0;
     GLXPbuffer glxPbuffer = 0;
+#endif
+
+#if MBGL_USE_GLFW_WIN32
+    void* glContext = 0;
 #endif
 
     bool extensionsLoaded = false;
