@@ -17,6 +17,16 @@ namespace test {
 #ifdef _WIN32
 
 // TODO
+pid_t startServer(const char *executable)
+{
+  pid_t pid;
+  return pid;
+}
+
+// TODO
+void stopServer(pid_t pid)
+{
+}
 
 #else
 
