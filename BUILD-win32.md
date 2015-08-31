@@ -73,9 +73,9 @@ cd _build
 make
 > La lib générée se trouve dans deps\nunicode\_build\libnu
 
-1. libuv
+1. `autotools`
 
-TODO
+TODO Use mingw-get instead of building those tools (mingw-get versions not tested)?
 
 Installation de msys.
 > Dézipper dans c:\mingw
@@ -99,19 +99,19 @@ cd libtool-2.4.10
 make clean && make && make install
 libtool --version
 
-Compilation de libuv
-> Dézipper "libuv-1.0.2.zip", puis dans une console msys:
-cd libuv-1.0.2
-autogen.sh
-./configure
-make
+1. `libuv`
+  ```
+  autogen.sh
+  ./configure --prefix=/mingw
+  make -j && make install
+  ```
 
 1. `GLFW`
   ```
   mkdir _build
   cd _build     # IMPORTANT or cmake does not build with mingw gcc for some reason
   cmake .. -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX=/mingw/
-  make -j & make install
+  make -j && make install
   ```
 
 1. `GLEW`
