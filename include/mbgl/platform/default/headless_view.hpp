@@ -5,6 +5,7 @@
 #define MBGL_USE_CGL 1
 #elif _WIN32
 #define MBGL_USE_GLFW_WIN32 1
+typedef struct GLFWwindow GLFWwindow;
 #else
 #define GL_GLEXT_PROTOTYPES
 #define MBGL_USE_GLX 1
@@ -67,7 +68,7 @@ private:
 #endif
 
 #if MBGL_USE_GLFW_WIN32
-    void* glContext = 0;
+    bool glContext = false;
 #endif
 
     bool extensionsLoaded = false;

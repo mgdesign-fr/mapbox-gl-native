@@ -18,6 +18,10 @@ public:
     Display *xDisplay = nullptr;
     GLXFBConfig *fbConfigs = nullptr;
 #endif
+
+#if MBGL_USE_GLFW_WIN32
+    GLFWwindow* window;
+#endif
 };
 
 }

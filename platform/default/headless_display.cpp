@@ -7,6 +7,10 @@
 #include <GL/glx.h>
 #endif
 
+#if MBGL_USE_GLFW_WIN32
+#include <mbgl/platform/default/glfw_view.hpp>      // for GLFW
+#endif
+
 namespace mbgl {
 
 HeadlessDisplay::HeadlessDisplay() {
@@ -70,6 +74,18 @@ HeadlessDisplay::HeadlessDisplay() {
 #endif
 
 #if MBGL_USE_GLFW_WIN32
+    printf("HeadlessDisplay()\n"); fflush(stdout);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    printf("HeadlessDisplay() - glfwWindowHint\n"); fflush(stdout);
+    glfwInit();
+    window = glfwCreateWindow(64, 64, "HeadlessDisplay", nullptr, nullptr);
+    printf("HeadlessDisplay() - glfwCreateWindow => %p\n", window); fflush(stdout);
+    if (window == nullptr) {
+        throw std::runtime_error("Failed to glfwCreateWindow.");
+    }
+    glfwWindowHint(GLFW_VISIBLE, GL_TRUE);          // restore default value
+    printf("HeadlessDisplay() - glfwWindowHint\n"); fflush(stdout);
+    printf("HeadlessDisplay /()\n"); fflush(stdout);
 #endif
 }
 
@@ -84,6 +100,10 @@ HeadlessDisplay::~HeadlessDisplay() {
 #endif
 
 #if MBGL_USE_GLFW_WIN32
+    printf("~HeadlessDisplay()\n"); fflush(stdout);
+    glfwDestroyWindow(window);
+    window = nullptr;
+    printf("~HeadlessDisplay() /\n"); fflush(stdout);
 #endif
 }
 

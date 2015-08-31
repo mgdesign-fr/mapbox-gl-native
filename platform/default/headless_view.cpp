@@ -17,6 +17,9 @@
 #elif MBGL_USE_GLX
 #include <GL/glx.h>
 #endif
+#if MBGL_USE_GLFW_WIN32
+#include <mbgl/platform/default/glfw_view.hpp>      // for GLFW
+#endif
 
 namespace mbgl {
 
@@ -57,6 +60,11 @@ void HeadlessView::loadExtensions() {
     gl::InitializeExtensions([](const char * name) {
         return glXGetProcAddress(reinterpret_cast<const GLubyte *>(name));
     });
+#endif
+
+#ifdef MBGL_USE_GLFW_WIN32
+    printf("glewInit()\n");
+    glewInit();
 #endif
 
     extensionsLoaded = true;
@@ -107,6 +115,10 @@ void HeadlessView::createContext() {
         None
     };
     glxPbuffer = glXCreatePbuffer(xDisplay, fbConfigs[0], pbufferAttributes);
+#endif
+
+#if MBGL_USE_GLFW_WIN32
+    glContext = true;
 #endif
 }
 
@@ -224,6 +236,10 @@ HeadlessView::~HeadlessView() {
 
     glXDestroyContext(xDisplay, glContext);
 #endif
+
+#if MBGL_USE_GLFW_WIN32
+    // TODO
+#endif
 }
 
 void HeadlessView::notify() {
@@ -286,6 +302,10 @@ void HeadlessView::deactivate() {
     if (!glXMakeContextCurrent(xDisplay, 0, 0, nullptr)) {
         throw std::runtime_error("Removing OpenGL context failed.\n");
     }
+#endif
+
+#if MBGL_USE_GLFW_WIN32
+    glfwMakeContextCurrent(NULL);
 #endif
 }
 
