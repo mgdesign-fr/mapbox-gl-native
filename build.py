@@ -89,7 +89,7 @@ for src_folder in src_folders:
       #clang_cmd += ["-femulated-tls"]                                                                      # NOTE(nico) - ?test? for 'undefined reference to `std::__once_call'
       clang_cmd += ["-pthread"]                                                                             # NOTE(nico) - otherwise linking fails
       clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
-      clang_cmd += ["-DCURL_STATICLIB", "-DZIP_EXTERN="]                                                    # NOTE(nico) - for static linking
+      #clang_cmd += ["-DCURL_STATICLIB", "-DZIP_EXTERN="]                                                    # NOTE(nico) - for static linking
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
       #clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
@@ -114,7 +114,7 @@ assert len(OBJs) == len(set(OBJs))
 #
 if LINK_MAPBOX_GL_DLL:
   clang_cmd = [ "g++", "-std=c++1y", "-shared", "-g", "-pthread" ]
-  clang_cmd += [ "-static" ]
+  #clang_cmd += [ "-static" ]
   clang_cmd += [ "-Wl,--export-all-symbols", "-Wl,--out-implib=libmapbox-gl.dll.a" ]                                  # NOTE(nico) - should be 'hidden' but...
   #clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-1.0.2", ".libs") ]
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
@@ -168,7 +168,9 @@ if BUILD_RENDER_EXE:
 # Unit tests
 #
 
-src_folders = ["test"]
+OBJs = []
+src_folders = ["test", os.path.join("deps", "gtest")]
+EXCLUDED_FILES = []
 
 for src_folder in src_folders:
 
@@ -177,23 +179,26 @@ for src_folder in src_folders:
     for fname in files:
       name, ext = os.path.splitext(fname)
 
-      if fname in EXCLUDED_FILES or (UNIT_TEST is not None and fname != UNIT_TEST):
-        if UNIT_TEST is not None:
-          print "skipping '%s'" % os.path.join(root, fname)
+      if fname in EXCLUDED_FILES:
+        print "skipping '%s'" % os.path.join(root, fname)
         continue
 
-      if not ext.lower() in [".c", ".cpp"]:
+      if not ext.lower() in [".c", ".cpp", ".cc"]:
         continue
 
       in_path = os.path.join(root, fname)
-      out_path = os.path.join("test", "%s.exe" % name)
+      out_path = os.path.join(buildPath, "test", "%s.o" % name)
+
+      if os.path.exists(out_path):
+        OBJs.append(out_path)
+        continue
 
       clang_cmd = [ "g++", "-std=c++1y", "-g", "-pthread" ]
       clang_cmd += [ in_path ]
       
-      clang_cmd += [ r"deps\gtest\gtest-all.cc" ]
-      for fixtname in ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp"]:
-        clang_cmd += [ os.path.join("test", "fixtures", fixtname) ]
+      #clang_cmd += [ r"deps\gtest\gtest-all.cc" ]
+      #for fixtname in ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp"]:
+      #  clang_cmd += [ os.path.join("test", "fixtures", fixtname) ]
 
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "deps", "gtest")]
@@ -203,21 +208,32 @@ for src_folder in src_folders:
       clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
       clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
       clang_cmd += [ "-L." ]
-      clang_cmd += [ "-o", out_path ]
-      #clang_cmd += [ "--verbose" ]
-      #clang_cmd += [ "-Wl,--verbose" ]
-      '''
-      clang_cmd += OBJs
-      '''
-      # IMPORTANT(nico) - must come *after* the input files
-      # IMPORTANT(nico) - order is important for the linker
-      #clang_cmd += [ "-luv" ]
-      clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
-      clang_cmd += [ "-lmapbox-gl" ]
-      #clang_cmd += [ "-Wl,-Bstatic", "-lboost_program_options" ]
-      clang_cmd += [ "-lboost_program_options" ]
+      clang_cmd += ["-c", "-o", out_path]
+      
       print clang_cmd
-      subprocess.call(clang_cmd)
+      code = subprocess.call(clang_cmd)
+      if code == 0:
+        OBJs.append(out_path)
+  
+clang_cmd = [ "g++", "-std=c++1y", "-g", "-pthread" ]
+clang_cmd += [ "-o", "test.exe" ]
+clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
+clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
+clang_cmd += [ "-L." ]
+clang_cmd += OBJs
+# IMPORTANT(nico) - must come *after* the input files
+# IMPORTANT(nico) - order is important for the linker
+#clang_cmd += [ "-luv" ]
+clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
+clang_cmd += [ "-lmapbox-gl" ]
+#clang_cmd += [ "-Wl,-Bstatic", "-lboost_program_options" ]
+clang_cmd += [ "-lboost_program_options" ]
+print clang_cmd
+subprocess.call(clang_cmd)
 
 """
 import os, subprocess, sys, errno
