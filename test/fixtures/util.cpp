@@ -14,6 +14,12 @@
 namespace mbgl {
 namespace test {
 
+#ifdef _WIN32
+
+// TODO
+
+#else
+
 pid_t startServer(const char *executable) {
     const std::string parent_pid = std::to_string(getpid());
     int pipefd[2];
@@ -61,6 +67,8 @@ pid_t startServer(const char *executable) {
 void stopServer(pid_t pid) {
     kill(pid, SIGTERM);
 }
+
+#endif
 
 // from https://gist.github.com/ArtemGr/997887
 uint64_t crc64(const char* data, size_t size) {

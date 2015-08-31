@@ -156,6 +156,60 @@ clang_cmd += [ "-lboost_program_options" ]
 print clang_cmd
 subprocess.call(clang_cmd)
 
+##############################################################################
+# Unit tests
+#
+
+src_folders = ["test"]
+
+for src_folder in src_folders:
+
+  for root, dirs, files in os.walk(src_folder):
+    
+    for fname in files:
+      name, ext = os.path.splitext(fname)
+
+      if fname in EXCLUDED_FILES:
+        print "skipping '%s'" % os.path.join(root, fname)
+        continue
+
+      if not ext.lower() in [".c", ".cpp"]:
+        continue
+
+      in_path = os.path.join(root, fname)
+      out_path = os.path.join("test", "%s.exe" % name)
+
+      clang_cmd = [ "g++", "-std=c++1y", "-g", "-pthread" ]
+      clang_cmd += [ in_path ]
+      
+      clang_cmd += [ r"deps\gtest\gtest-all.cc" ]
+      for fixtname in ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp"]:
+        clang_cmd += [ os.path.join("test", "fixtures", fixtname) ]
+
+      clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "deps", "gtest")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+      clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
+      clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
+      clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
+      clang_cmd += [ "-L." ]
+      clang_cmd += [ "-o", out_path ]
+      #clang_cmd += [ "--verbose" ]
+      #clang_cmd += [ "-Wl,--verbose" ]
+      '''
+      clang_cmd += OBJs
+      '''
+      # IMPORTANT(nico) - must come *after* the input files
+      # IMPORTANT(nico) - order is important for the linker
+      #clang_cmd += [ "-luv" ]
+      clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
+      clang_cmd += [ "-lmapbox-gl" ]
+      #clang_cmd += [ "-Wl,-Bstatic", "-lboost_program_options" ]
+      clang_cmd += [ "-lboost_program_options" ]
+      print clang_cmd
+      subprocess.call(clang_cmd)
+
 """
 import os, subprocess, sys, errno
 
