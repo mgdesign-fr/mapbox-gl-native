@@ -1,6 +1,6 @@
 #import "MBXViewController.h"
 
-#import <mbgl/ios/MapboxGL.h>
+#import <mbgl/ios/Mapbox.h>
 
 #import <mbgl/platform/darwin/settings_nsuserdefaults.hpp>
 
@@ -9,17 +9,14 @@
 static UIColor *const kTintColor = [UIColor colorWithRed:0.120 green:0.550 blue:0.670 alpha:1.000];
 
 static NSArray *const kStyleNames = @[
-    @"Mapbox Streets",
+    @"Streets",
     @"Emerald",
     @"Light",
     @"Dark",
-    @"Bright",
-    @"Basic",
-    @"Outdoors",
     @"Satellite",
 ];
 
-static NSString *const kStyleVersion = @"7";
+static NSUInteger const kStyleVersion = 8;
 
 @interface MBXViewController () <UIActionSheetDelegate, MGLMapViewDelegate>
 
@@ -89,6 +86,7 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
         settings->latitude = self.mapView.centerCoordinate.latitude;
         settings->zoom = self.mapView.zoomLevel;
         settings->bearing = self.mapView.direction;
+        settings->pitch = self.mapView.pitch;
         settings->debug = self.mapView.isDebugActive;
         settings->userTrackingMode = self.mapView.userTrackingMode;
         settings->showsUserLocation = self.mapView.showsUserLocation;
@@ -102,6 +100,7 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
         settings->load();
         [self.mapView setCenterCoordinate:CLLocationCoordinate2DMake(settings->latitude, settings->longitude) zoomLevel:settings->zoom animated:NO];
         self.mapView.direction = settings->bearing;
+        self.mapView.pitch = settings->pitch;
         self.mapView.userTrackingMode = settings->userTrackingMode;
         self.mapView.showsUserLocation = settings->showsUserLocation;
         [self.mapView setDebugActive:settings->debug];
@@ -139,11 +138,26 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
 {
     if (buttonIndex == actionSheet.firstOtherButtonIndex)
     {
-        [self.mapView resetNorth];
+//        [self.mapView resetNorth];
+//        [self.mapView setCenterCoordinate:CLLocationCoordinate2DMake(29.95, -90.066667) zoomLevel:14 direction:90 animated:YES];
+        CLLocationCoordinate2D coordinates[] = {
+            CLLocationCoordinate2DMake(37, -109+2/60+48/(60*60)),
+            CLLocationCoordinate2DMake(37, -102.05),
+            CLLocationCoordinate2DMake(41, -102.05),
+            CLLocationCoordinate2DMake(41, -109+2/60+48/(60*60)),
+        };
+        [self.mapView setVisibleCoordinates:coordinates count:4 edgePadding:UIEdgeInsetsMake(32, 0, 0, 0) animated:NO];
+//        self.mapView.camera = [MGLMapCamera cameraLookingAtCenterCoordinate:CLLocationCoordinate2DMake(29.95, -90.066667) fromDistance:1837212.607578 heading:90];
+        // 1982881.568373
+        NSLog(@"Camera: %@", self.mapView.camera);
+        NSLog(@"Altitude: %f", self.mapView.camera.altitude);
     }
     else if (buttonIndex == actionSheet.firstOtherButtonIndex + 1)
     {
-        [self.mapView resetPosition];
+//        [self.mapView resetPosition];
+        MGLMapCamera *camera = [self.mapView.camera copy];
+        camera.pitch = 45;
+        [self.mapView setCamera:camera animated:YES];
     }
     else if (buttonIndex == actionSheet.firstOtherButtonIndex + 2)
     {
@@ -301,27 +315,31 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
     }
 
     self.mapView.styleURL = [NSURL URLWithString:
-        [NSString stringWithFormat:@"asset://styles/%@-v%@.json",
-            [[styleName lowercaseString] stringByReplacingOccurrencesOfString:@" " withString:@"-"],
-            kStyleVersion]];
+        [NSString stringWithFormat:@"asset://styles/%@-v%lu.json",
+            [styleName lowercaseString],
+            (unsigned long)kStyleVersion]];
 
     [titleButton setTitle:styleName forState:UIControlStateNormal];
 }
 
 - (void)locateUser
 {
-    if (self.mapView.userTrackingMode == MGLUserTrackingModeNone)
-    {
-        self.mapView.userTrackingMode = MGLUserTrackingModeFollow;
+    MGLUserTrackingMode nextMode;
+    switch (self.mapView.userTrackingMode) {
+        case MGLUserTrackingModeNone:
+            nextMode = MGLUserTrackingModeFollow;
+            break;
+        case MGLUserTrackingModeFollow:
+            nextMode = MGLUserTrackingModeFollowWithHeading;
+            break;
+        case MGLUserTrackingModeFollowWithHeading:
+            nextMode = MGLUserTrackingModeFollowWithCourse;
+            break;
+        case MGLUserTrackingModeFollowWithCourse:
+            nextMode = MGLUserTrackingModeNone;
+            break;
     }
-    else if (self.mapView.userTrackingMode == MGLUserTrackingModeFollow)
-    {
-        self.mapView.userTrackingMode = MGLUserTrackingModeFollowWithHeading;
-    }
-    else
-    {
-        self.mapView.userTrackingMode = MGLUserTrackingModeNone;
-    }
+    self.mapView.userTrackingMode = nextMode;
 }
 
 #pragma mark - Destruction
@@ -402,6 +420,7 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
 - (void)mapView:(__unused MGLMapView *)mapView didChangeUserTrackingMode:(MGLUserTrackingMode)mode animated:(__unused BOOL)animated
 {
     UIImage *newButtonImage;
+    NSString *newButtonTitle;
     
     switch (mode) {
         case MGLUserTrackingModeNone:
@@ -415,8 +434,13 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
         case MGLUserTrackingModeFollowWithHeading:
             newButtonImage = [UIImage imageNamed:@"TrackingHeadingMask.png"];
             break;
+        case MGLUserTrackingModeFollowWithCourse:
+            newButtonImage = nil;
+            newButtonTitle = @"Course";
+            break;
     }
     
+    self.navigationItem.rightBarButtonItem.title = newButtonTitle;
     [UIView animateWithDuration:0.25 animations:^{
         self.navigationItem.rightBarButtonItem.image = newButtonImage;
     }];

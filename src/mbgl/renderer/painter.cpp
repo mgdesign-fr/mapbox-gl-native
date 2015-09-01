@@ -26,8 +26,8 @@
 #include <mbgl/shader/raster_shader.hpp>
 #include <mbgl/shader/sdf_shader.hpp>
 #include <mbgl/shader/dot_shader.hpp>
-#include <mbgl/shader/gaussian_shader.hpp>
 #include <mbgl/shader/box_shader.hpp>
+#include <mbgl/shader/circle_shader.hpp>
 
 #include <mbgl/util/constants.hpp>
 #include <mbgl/util/mat3.hpp>
@@ -49,7 +49,7 @@ Painter::~Painter() {
 }
 
 bool Painter::needsAnimation() const {
-    return frameHistory.needsAnimation(data.getDefaultFadeDuration()) || state.isChanging();
+    return frameHistory.needsAnimation(data.getDefaultFadeDuration());
 }
 
 void Painter::setup() {
@@ -67,7 +67,7 @@ void Painter::setup() {
     assert(sdfGlyphShader);
     assert(sdfIconShader);
     assert(dotShader);
-    assert(gaussianShader);
+    assert(circleShader);
 
 
     // Blending
@@ -101,8 +101,8 @@ void Painter::setupShaders() {
     if (!sdfGlyphShader) sdfGlyphShader = std::make_unique<SDFGlyphShader>();
     if (!sdfIconShader) sdfIconShader = std::make_unique<SDFIconShader>();
     if (!dotShader) dotShader = std::make_unique<DotShader>();
-    if (!gaussianShader) gaussianShader = std::make_unique<GaussianShader>();
     if (!collisionBoxShader) collisionBoxShader = std::make_unique<CollisionBoxShader>();
+    if (!circleShader) circleShader = std::make_unique<CircleShader>();
 }
 
 void Painter::resize() {
@@ -132,13 +132,11 @@ void Painter::lineWidth(float line_width) {
 }
 
 void Painter::changeMatrix() {
-    // Initialize projection matrix
-    matrix::ortho(projMatrix, 0, state.getWidth(), state.getHeight(), 0, 0, 1);
+
+    state.getProjMatrix(projMatrix);
 
     // The extrusion matrix.
-    matrix::identity(extrudeMatrix);
-    matrix::multiply(extrudeMatrix, projMatrix, extrudeMatrix);
-    matrix::rotate_z(extrudeMatrix, extrudeMatrix, state.getAngle());
+    matrix::ortho(extrudeMatrix, 0, state.getWidth(), state.getHeight(), 0, 0, -1);
 
     // The native matrix is a 1:1 matrix that paints the coordinates at the
     // same screen position as the vertex specifies.
@@ -147,17 +145,13 @@ void Painter::changeMatrix() {
 }
 
 void Painter::clear() {
-    gl::debugging::group group("clear");
+    MBGL_DEBUG_GROUP("clear");
     config.stencilTest = true;
     config.stencilMask = 0xFF;
     config.depthTest = false;
     config.depthMask = GL_TRUE;
-    config.clearColor = { 0.0f, 0.0f, 0.0f, 0.0f };
+    config.clearColor = { background[0], background[1], background[2], background[3] };
     MBGL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-}
-
-void Painter::setStrata(float value) {
-    strata = value;
 }
 
 void Painter::prepareTile(const Tile& tile) {
@@ -190,7 +184,7 @@ void Painter::render(const Style& style, TransformState state_, const FrameData&
     // - UPLOAD PASS -------------------------------------------------------------------------------
     // Uploads all required buffers and images before we do any actual rendering.
     {
-        const gl::debugging::group upload("upload");
+        MBGL_DEBUG_GROUP("upload");
 
         tileStencilBuffer.upload();
         tileBorderBuffer.upload();
@@ -209,7 +203,7 @@ void Painter::render(const Style& style, TransformState state_, const FrameData&
     // - CLIPPING MASKS ----------------------------------------------------------------------------
     // Draws the clipping masks to the stencil buffer.
     {
-        const gl::debugging::group clip("clip");
+        MBGL_DEBUG_GROUP("clip");
 
         // Update all clipping IDs.
         ClipIDGenerator generator;
@@ -229,26 +223,26 @@ void Painter::render(const Style& style, TransformState state_, const FrameData&
     if (debug::renderTree) { Log::Info(Event::Render, "{"); indent++; }
 
     // TODO: Correctly compute the number of layers recursively beforehand.
-    const float strataThickness = 1.0f / (order.size() + 1);
+    depthRangeSize = 1 - (order.size() + 2) * numSublayers * depthEpsilon;
 
     // - OPAQUE PASS -------------------------------------------------------------------------------
     // Render everything top-to-bottom by using reverse iterators. Render opaque objects first.
     renderPass(RenderPass::Opaque,
                order.rbegin(), order.rend(),
-               0, 1, strataThickness);
+               0, 1);
 
     // - TRANSLUCENT PASS --------------------------------------------------------------------------
     // Make a second pass, rendering translucent objects. This time, we render bottom-to-top.
     renderPass(RenderPass::Translucent,
                order.begin(), order.end(),
-               order.size() - 1, -1, strataThickness);
+               order.size() - 1, -1);
 
     if (debug::renderTree) { Log::Info(Event::Render, "}"); indent--; }
 
     // - DEBUG PASS --------------------------------------------------------------------------------
     // Renders debug overlays.
     {
-        const gl::debugging::group _("debug");
+        MBGL_DEBUG_GROUP("debug");
 
         // Finalize the rendering, e.g. by calling debug render calls per tile.
         // This guarantees that we have at least one function per tile called.
@@ -262,7 +256,7 @@ void Painter::render(const Style& style, TransformState state_, const FrameData&
     // TODO: Find a better way to unbind VAOs after we're done with them without introducing
     // unnecessary bind(0)/bind(N) sequences.
     {
-        const gl::debugging::group _("cleanup");
+        MBGL_DEBUG_GROUP("cleanup");
 
         MBGL_CHECK_ERROR(glBindTexture(GL_TEXTURE_2D, 0));
         MBGL_CHECK_ERROR(VertexArrayObject::Unbind());
@@ -272,31 +266,29 @@ void Painter::render(const Style& style, TransformState state_, const FrameData&
 template <class Iterator>
 void Painter::renderPass(RenderPass pass_,
                          Iterator it, Iterator end,
-                         std::size_t i, int8_t increment,
-                         const float strataThickness) {
+                         std::size_t i, int8_t increment) {
     pass = pass_;
 
-    const char * passName = pass == RenderPass::Opaque ? "opaque" : "translucent";
-    const gl::debugging::group _(passName);
+    MBGL_DEBUG_GROUP(pass == RenderPass::Opaque ? "opaque" : "translucent");
 
     if (debug::renderTree) {
-        Log::Info(Event::Render, "%*s%s {", indent++ * 4, "", passName);
+        Log::Info(Event::Render, "%*s%s {", indent++ * 4, "",
+                  pass == RenderPass::Opaque ? "opaque" : "translucent");
     }
 
     config.blend = pass == RenderPass::Translucent;
 
     for (; it != end; ++it, i += increment) {
+        currentLayer = i;
         const auto& item = *it;
         if (item.bucket && item.tile) {
-            if (item.hasRenderPass(pass)) {
-                const gl::debugging::group group(item.layer.id + " - " + std::string(item.tile->id));
-                setStrata(i * strataThickness);
+            if (item.layer.hasRenderPass(pass)) {
+                MBGL_DEBUG_GROUP(item.layer.id + " - " + std::string(item.tile->id));
                 prepareTile(*item.tile);
                 item.bucket->render(*this, item.layer, item.tile->id, item.tile->matrix);
             }
         } else {
-            const gl::debugging::group group("background");
-            setStrata(i * strataThickness);
+            MBGL_DEBUG_GROUP("background");
             renderBackground(item.layer);
         }
     }
@@ -314,7 +306,21 @@ std::vector<RenderItem> Painter::determineRenderOrder(const Style& style) {
         if (layer.bucket->visibility == VisibilityType::None) continue;
         if (layer.type == StyleLayerType::Background) {
             // This layer defines a background color/image.
-            order.emplace_back(layer);
+            if (layer.properties.is<BackgroundProperties>()) {
+                auto &props = layer.properties.get<BackgroundProperties>();
+                if (props.image.from.empty()) {
+                    // This is a solid background. We can use glClear().
+                    background = props.color;
+                    background[0] *= props.opacity;
+                    background[1] *= props.opacity;
+                    background[2] *= props.opacity;
+                    background[3] *= props.opacity;
+                } else {
+                    // This is a textured background. We need to render it with a quad.
+                    background = {{ 0, 0, 0, 0 }};
+                    order.emplace_back(layer);
+                }
+            }
             continue;
         }
 
@@ -339,14 +345,6 @@ std::vector<RenderItem> Painter::determineRenderOrder(const Style& style) {
             continue;
         }
 
-        // Don't include invisible layers.
-        if (!layer.isVisible()) {
-            continue;
-        }
-
-        // Determine what render passes we need for this layer.
-        const RenderPass passes = determineRenderPasses(layer);
-
         const auto& tiles = source->getTiles();
         for (auto tile : tiles) {
             assert(tile);
@@ -356,7 +354,7 @@ std::vector<RenderItem> Painter::determineRenderOrder(const Style& style) {
 
             auto bucket = tile->data->getBucket(layer);
             if (bucket) {
-                order.emplace_back(layer, tile, bucket, passes);
+                order.emplace_back(layer, tile, bucket);
             }
         }
     }
@@ -364,32 +362,12 @@ std::vector<RenderItem> Painter::determineRenderOrder(const Style& style) {
     return order;
 }
 
-RenderPass Painter::determineRenderPasses(const StyleLayer& layer) {
-    RenderPass passes = RenderPass::None;
-
-    if (layer.properties.is<FillProperties>()) {
-        const FillProperties &properties = layer.properties.get<FillProperties>();
-        const float alpha = properties.fill_color[3] * properties.opacity;
-
-        if (properties.antialias) {
-            passes |= RenderPass::Translucent;
-        }
-        if (properties.image.from.size() || alpha < 1.0f) {
-            passes |= RenderPass::Translucent;
-        } else {
-            passes |= RenderPass::Opaque;
-        }
-    } else {
-        passes |= RenderPass::Translucent;
-    }
-
-    return passes;
-}
-
 void Painter::renderBackground(const StyleLayer &layer_desc) {
+    // Note: This function is only called for textured background. Otherwise, the background color
+    // is created with glClear.
     const BackgroundProperties& properties = layer_desc.getProperties<BackgroundProperties>();
 
-    if (properties.image.to.size()) {
+    if (!properties.image.to.empty()) {
         if ((properties.opacity >= 1.0f) != (pass == RenderPass::Opaque))
             return;
 
@@ -407,7 +385,7 @@ void Painter::renderBackground(const StyleLayer &layer_desc) {
         patternShader->u_opacity = properties.opacity;
 
         LatLng latLng = state.getLatLng();
-        vec2<double> center = state.pixelForLatLng(latLng);
+        vec2<double> center = state.latLngToPoint(latLng);
         float scale = 1 / std::pow(2, zoomFraction);
 
         std::array<float, 2> sizeA = imagePosA.size;
@@ -444,25 +422,12 @@ void Painter::renderBackground(const StyleLayer &layer_desc) {
         backgroundBuffer.bind();
         patternShader->bind(0);
         spriteAtlas->bind(true);
-    } else {
-        Color color = properties.color;
-        color[0] *= properties.opacity;
-        color[1] *= properties.opacity;
-        color[2] *= properties.opacity;
-        color[3] *= properties.opacity;
-
-        if ((color[3] >= 1.0f) != (pass == RenderPass::Opaque))
-            return;
-
-        useProgram(plainShader->program);
-        plainShader->u_matrix = identityMatrix;
-        plainShader->u_color = color;
-        backgroundArray.bind(*plainShader, backgroundBuffer, BUFFER_OFFSET(0));
     }
 
     config.stencilTest = false;
     config.depthTest = true;
-    config.depthRange = { strata + strata_epsilon, 1.0f };
+    config.depthRange = { 1.0f, 1.0f };
+
     MBGL_CHECK_ERROR(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
 }
 
@@ -490,4 +455,10 @@ mat4 Painter::translatedMatrix(const mat4& matrix, const std::array<float, 2> &t
 
         return vtxMatrix;
     }
+}
+
+void Painter::setDepthSublayer(int n) {
+    float nearDepth = ((1 + currentLayer) * numSublayers + n) * depthEpsilon;
+    float farDepth = nearDepth + depthRangeSize;
+    config.depthRange = { nearDepth, farDepth };
 }

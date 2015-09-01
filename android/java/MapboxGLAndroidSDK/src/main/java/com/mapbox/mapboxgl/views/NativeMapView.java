@@ -2,8 +2,10 @@ package com.mapbox.mapboxgl.views;
 
 import android.graphics.PointF;
 import android.view.Surface;
-import android.util.Log;
 
+import com.mapbox.mapboxgl.annotations.Marker;
+import com.mapbox.mapboxgl.annotations.Polygon;
+import com.mapbox.mapboxgl.annotations.Polyline;
 import com.mapbox.mapboxgl.geometry.LatLng;
 import com.mapbox.mapboxgl.geometry.LatLngZoom;
 import com.mapbox.mapboxgl.geometry.ProjectedMeters;
@@ -39,11 +41,19 @@ class NativeMapView {
     // Constructors
     //
 
-    public NativeMapView(MapView mapView, String cachePath, String dataPath, String apkPath, float pixelRatio) {
+    public NativeMapView(MapView mapView, String cachePath, String dataPath, String apkPath, float pixelRatio, int availableProcessors, long totalMemory) {
+        if (availableProcessors < 0) {
+            throw new IllegalArgumentException("availableProcessors cannot be negative.");
+        }
+
+        if (totalMemory < 0) {
+            throw new IllegalArgumentException("totalMemory cannot be negative.");
+        }
+
         mMapView = mapView;
 
         // Create the NativeMapView
-        mNativeMapViewPtr = nativeCreate(cachePath, dataPath, apkPath, pixelRatio);
+        mNativeMapViewPtr = nativeCreate(cachePath, dataPath, apkPath, pixelRatio, availableProcessors, totalMemory);
     }
 
     //
@@ -163,7 +173,7 @@ class NativeMapView {
     public void setDefaultTransitionDuration(long milliseconds) {
         if (milliseconds < 0) {
             throw new IllegalArgumentException(
-                    "durationMilliseconds cannot be negative.");
+                    "milliseconds cannot be negative.");
         }
 
         nativeSetDefaultTransitionDuration(mNativeMapViewPtr,
@@ -175,7 +185,7 @@ class NativeMapView {
     }
 
     public void setStyleJson(String newStyleJson) {
-        setStyleJson(newStyleJson,  "");
+        setStyleJson(newStyleJson, "");
     }
 
     public void setStyleJson(String newStyleJson, String base) {
@@ -196,6 +206,10 @@ class NativeMapView {
 
     public void cancelTransitions() {
         nativeCancelTransitions(mNativeMapViewPtr);
+    }
+
+    public void setGestureInProgress(boolean inProgress) {
+        nativeSetGestureInProgress(mNativeMapViewPtr, inProgress);
     }
 
     public void moveBy(double dx, double dy) {
@@ -315,6 +329,38 @@ class NativeMapView {
         nativeResetNorth(mNativeMapViewPtr);
     }
 
+    public long addMarker(Marker marker) {
+        return nativeAddMarker(mNativeMapViewPtr, marker);
+    }
+
+    public long addPolyline(Polyline polyline) {
+        return nativeAddPolyline(mNativeMapViewPtr, polyline);
+    }
+
+    public long addPolygon(Polygon polygon) {
+        return nativeAddPolygon(mNativeMapViewPtr, polygon);
+    }
+
+    public long[] addPolygons(List<Polygon> polygon) {
+        return nativeAddPolygons(mNativeMapViewPtr, polygon);
+    }
+
+    public void removeAnnotation(long id) {
+        nativeRemoveAnnotation(mNativeMapViewPtr, id);
+    }
+
+    public void removeAnnotations(long[] ids) {
+        nativeRemoveAnnotations(mNativeMapViewPtr, ids);
+    }
+
+    public void setSprite(String symbol, int width, int height, float scale, byte[] pixels) {
+        nativeSetSprite(mNativeMapViewPtr, symbol, width, height, scale, pixels);
+    }
+
+    public void onLowMemory() {
+        nativeOnLowMemory(mNativeMapViewPtr);
+    }
+
     public void setDebug(boolean debug) {
         nativeSetDebug(mNativeMapViewPtr, debug);
     }
@@ -327,11 +373,27 @@ class NativeMapView {
         return nativeGetDebug(mNativeMapViewPtr);
     }
 
+    public void setCollisionDebug(boolean debug) {
+        nativeSetCollisionDebug(mNativeMapViewPtr, debug);
+    }
+
+    public void toggleCollisionDebug() {
+        nativeToggleCollisionDebug(mNativeMapViewPtr);
+    }
+
+    public boolean getCollisionDebug() {
+        return nativeGetCollisionDebug(mNativeMapViewPtr);
+    }
+
+    public boolean isFullyLoaded() {
+        return nativeIsFullyLoaded(mNativeMapViewPtr);
+    }
+
     public void setReachability(boolean status) {
         nativeSetReachability(mNativeMapViewPtr, status);
     }
 
-    //public void getWorldBoundsMeters();
+    //public void                            ();
 
     //public void getWorldBoundsLatLng();
 
@@ -382,7 +444,7 @@ class NativeMapView {
         super.finalize();
     }
 
-    private native long nativeCreate(String cachePath, String dataPath, String apkPath, float pixelRatio);
+    private native long nativeCreate(String cachePath, String dataPath, String apkPath, float pixelRatio, int availableProcessors, long totalMemory);
 
     private native void nativeDestroy(long nativeMapViewPtr);
 
@@ -440,6 +502,8 @@ class NativeMapView {
 
     private native void nativeCancelTransitions(long nativeMapViewPtr);
 
+    private native void nativeSetGestureInProgress(long nativeMapViewPtr, boolean inProgress);
+
     private native void nativeMoveBy(long nativeMapViewPtr, double dx,
             double dy, long duration);
 
@@ -487,11 +551,36 @@ class NativeMapView {
 
     private native void nativeResetNorth(long nativeMapViewPtr);
 
+    private native long nativeAddMarker(long nativeMapViewPtr, Marker marker);
+
+    private native long nativeAddPolyline(long nativeMapViewPtr, Polyline polyline);
+
+    private native long nativeAddPolygon(long mNativeMapViewPtr, Polygon polygon);
+
+    private native long[] nativeAddPolygons(long mNativeMapViewPtr, List<Polygon> polygon);
+
+    private native void nativeRemoveAnnotation(long nativeMapViewPtr, long id);
+
+    private native void nativeRemoveAnnotations(long nativeMapViewPtr, long[] id);
+
+    private native void nativeSetSprite(long nativeMapViewPtr, String symbol,
+                                        int width, int height, float scale, byte[] pixels);
+
+    private native void nativeOnLowMemory(long nativeMapViewPtr);
+
     private native void nativeSetDebug(long nativeMapViewPtr, boolean debug);
 
     private native void nativeToggleDebug(long nativeMapViewPtr);
 
     private native boolean nativeGetDebug(long nativeMapViewPtr);
+
+    private native void nativeSetCollisionDebug(long nativeMapViewPtr, boolean debug);
+
+    private native void nativeToggleCollisionDebug(long nativeMapViewPtr);
+
+    private native boolean nativeGetCollisionDebug(long nativeMapViewPtr);
+
+    private native boolean nativeIsFullyLoaded(long nativeMapViewPtr);
 
     private native void nativeSetReachability(long nativeMapViewPtr, boolean status);
 

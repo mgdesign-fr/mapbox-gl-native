@@ -24,6 +24,7 @@
 #include <mbgl/util/worker.hpp>
 #include <mbgl/util/texture_pool.hpp>
 #include <mbgl/util/exception.hpp>
+#include <mbgl/util/string.hpp>
 
 #include <algorithm>
 
@@ -32,9 +33,9 @@ namespace mbgl {
 MapContext::MapContext(View& view_, FileSource& fileSource, MapData& data_)
     : view(view_),
       data(data_),
-      updated(static_cast<UpdateType>(Update::Nothing)),
       asyncUpdate(std::make_unique<uv::async>(util::RunLoop::getLoop(), [this] { update(); })),
-      texturePool(std::make_unique<TexturePool>()) {
+      texturePool(std::make_unique<TexturePool>()),
+      viewInvalidated(false) {
     assert(util::ThreadContext::currentlyOn(util::ThreadType::Map));
 
     util::ThreadContext::setFileSource(&fileSource);
@@ -73,6 +74,8 @@ void MapContext::cleanup() {
 void MapContext::pause() {
     MBGL_CHECK_ERROR(glFinish());
 
+    viewInvalidated = false;
+
     view.deactivate();
 
     std::unique_lock<std::mutex> lockPause(data.mutexPause);
@@ -80,11 +83,13 @@ void MapContext::pause() {
     data.condResume.wait(lockPause);
 
     view.activate();
+
+    invalidateView();
 }
 
-void MapContext::triggerUpdate(const TransformState& state, const Update u) {
+void MapContext::triggerUpdate(const TransformState& state, const Update flags) {
     transformState = state;
-    updated |= static_cast<UpdateType>(u);
+    updateFlags |= flags;
 
     asyncUpdate->send();
 }
@@ -136,13 +141,11 @@ void MapContext::loadStyleJSON(const std::string& json, const std::string& base)
     // force style cascade, causing all pending transitions to complete.
     style->cascade();
 
-    updated |= static_cast<UpdateType>(Update::DefaultTransitionDuration);
-    updated |= static_cast<UpdateType>(Update::Classes);
-    updated |= static_cast<UpdateType>(Update::Zoom);
+    updateFlags |= Update::DefaultTransition | Update::Classes | Update::Zoom;
     asyncUpdate->send();
 
     auto staleTiles = data.getAnnotationManager()->resetStaleTiles();
-    if (staleTiles.size()) {
+    if (!staleTiles.empty()) {
         updateAnnotationTiles(staleTiles);
     }
 }
@@ -170,7 +173,7 @@ void MapContext::updateAnnotationTiles(const std::unordered_set<TileID, TileID::
 
     // create (if necessary) layers and buckets for each shape
     for (const auto &shapeAnnotationID : annotationManager->getOrderedShapeAnnotations()) {
-        const std::string shapeLayerID = shapeID + "." + std::to_string(shapeAnnotationID);
+        const std::string shapeLayerID = shapeID + "." + util::toString(shapeAnnotationID);
 
         const auto layer_it = std::find_if(style->layers.begin(), style->layers.end(),
             [&shapeLayerID](util::ptr<StyleLayer> layer) {
@@ -243,7 +246,7 @@ void MapContext::updateAnnotationTiles(const std::unordered_set<TileID, TileID::
         }
     }
 
-    updated |= static_cast<UpdateType>(Update::Classes);
+    updateFlags |= Update::Classes;
     asyncUpdate->send();
 
     annotationManager->resetStaleTiles();
@@ -253,33 +256,35 @@ void MapContext::update() {
     assert(util::ThreadContext::currentlyOn(util::ThreadType::Map));
 
     if (!style) {
-        updated = static_cast<UpdateType>(Update::Nothing);
+        updateFlags = Update::Nothing;
+    }
+
+    if (updateFlags == Update::Nothing) {
         return;
     }
 
     data.setAnimationTime(Clock::now());
 
-    if (updated & static_cast<UpdateType>(Update::Classes)) {
+    if (updateFlags & Update::Classes) {
         style->cascade();
     }
 
-    if (updated & static_cast<UpdateType>(Update::Classes) ||
-            updated & static_cast<UpdateType>(Update::Zoom)) {
+    if (updateFlags & Update::Classes || updateFlags & Update::Zoom) {
         style->recalculate(transformState.getNormalizedZoom());
     }
 
     style->update(transformState, *texturePool);
 
     if (data.mode == MapMode::Continuous) {
-        view.invalidate();
-    } else if (callback && style->isLoaded()) {
+        invalidateView();
+    } else if (callback && isLoaded()) {
         renderSync(transformState, frameData);
     }
 
-    updated = static_cast<UpdateType>(Update::Nothing);
+    updateFlags = Update::Nothing;
 }
 
-void MapContext::renderStill(const TransformState& state, const FrameData& frame, StillImageCallback fn) {
+void MapContext::renderStill(const TransformState& state, const FrameData& frame, Map::StillImageCallback fn) {
     if (!fn) {
         Log::Error(Event::General, "StillImageCallback not set");
         return;
@@ -309,16 +314,16 @@ void MapContext::renderStill(const TransformState& state, const FrameData& frame
     transformState = state;
     frameData = frame;
 
-    updated |= static_cast<UpdateType>(Update::RenderStill);
+    updateFlags |= Update::RenderStill;
     asyncUpdate->send();
 }
 
-MapContext::RenderResult MapContext::renderSync(const TransformState& state, const FrameData& frame) {
+bool MapContext::renderSync(const TransformState& state, const FrameData& frame) {
     assert(util::ThreadContext::currentlyOn(util::ThreadType::Map));
 
     // Style was not loaded yet.
     if (!style) {
-        return { false, false };
+        return false;
     }
 
     transformState = state;
@@ -340,11 +345,10 @@ MapContext::RenderResult MapContext::renderSync(const TransformState& state, con
     }
 
     view.swap();
+    viewInvalidated = false;
+    data.setNeedsRepaint(style->hasTransitions() || painter->needsAnimation());
 
-    return RenderResult {
-        style->isLoaded(),
-        style->hasTransitions() || painter->needsAnimation()
-    };
+    return isLoaded();
 }
 
 bool MapContext::isLoaded() const {
@@ -369,7 +373,7 @@ void MapContext::setSourceTileCacheSize(size_t size) {
         for (const auto &source : style->sources) {
             source->setCacheSize(sourceCacheSize);
         }
-        view.invalidate();
+        invalidateView();
     }
 }
 
@@ -379,7 +383,7 @@ void MapContext::onLowMemory() {
     for (const auto &source : style->sources) {
         source->onLowMemory();
     }
-    view.invalidate();
+    invalidateView();
 }
 
 void MapContext::setSprite(const std::string& name, std::shared_ptr<const SpriteImage> sprite) {
@@ -395,6 +399,8 @@ void MapContext::setSprite(const std::string& name, std::shared_ptr<const Sprite
 
 void MapContext::onTileDataChanged() {
     assert(util::ThreadContext::currentlyOn(util::ThreadType::Map));
+
+    updateFlags |= Update::Repaint;
     asyncUpdate->send();
 }
 
@@ -404,6 +410,13 @@ void MapContext::onResourceLoadingFailed(std::exception_ptr error) {
     if (data.mode == MapMode::Still && callback) {
         callback(error, nullptr);
         callback = nullptr;
+    }
+}
+
+void MapContext::invalidateView() {
+    if (!viewInvalidated) {
+        viewInvalidated = true;
+        view.invalidate();
     }
 }
 

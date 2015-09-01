@@ -17,9 +17,11 @@
         '../platform/darwin/image.mm',
         '../platform/darwin/nsthread.mm',
         '../platform/darwin/reachability.m',
-        '../include/mbgl/ios/MapboxGL.h',
+        '../include/mbgl/ios/Mapbox.h',
         '../platform/ios/MGLMapboxEvents.h',
         '../platform/ios/MGLMapboxEvents.m',
+        '../include/mbgl/ios/MGLMapCamera.h',
+        '../platform/ios/MGLMapCamera.mm',
         '../include/mbgl/ios/MGLMapView.h',
         '../include/mbgl/ios/MGLMapView+IBAdditions.h',
         '../platform/ios/MGLMapView.mm',
@@ -65,11 +67,11 @@
 
       'variables': {
         'cflags_cc': [
-          '<@(uv_cflags)',
+          '<@(libuv_cflags)',
           '<@(boost_cflags)',
         ],
         'libraries': [
-          '<@(uv_static_libs)',
+          '<@(libuv_static_libs)',
         ],
         'ldflags': [
           '-framework CoreLocation',

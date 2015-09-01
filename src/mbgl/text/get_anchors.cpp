@@ -32,7 +32,7 @@ Anchors resample(const std::vector<Coordinate> &line, const float offset, const 
                   y = util::interpolate(float(a.y), float(b.y), t);
 
             if (x >= 0 && x < 4096 && y >= 0 && y < 4096) {
-                Anchor anchor(std::round(x), std::round(y), angle, 0.5f, i);
+                Anchor anchor(::round(x), ::round(y), angle, 0.5f, i);
 
                 if (!angleWindowSize || checkMaxAngle(line, anchor, labelLength, angleWindowSize, maxAngle)) {
                     anchors.push_back(anchor);
@@ -43,7 +43,7 @@ Anchors resample(const std::vector<Coordinate> &line, const float offset, const 
         distance += segmentDist;
     }
 
-    if (!placeAtMiddle && !anchors.size() && !continuedLine) {
+    if (!placeAtMiddle && anchors.empty() && !continuedLine) {
         // The first attempt at finding anchors at which labels can be placed failed.
         // Try again, but this time just try placing one anchor at the middle of the line.
         // This has the most effect for short lines in overscaled tiles, since the

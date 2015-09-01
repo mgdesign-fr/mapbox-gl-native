@@ -9,6 +9,7 @@
 
 #include <mbgl/util/projection.hpp>
 #include <mbgl/util/thread.hpp>
+#include <mbgl/util/math.hpp>
 
 namespace mbgl {
 
@@ -55,33 +56,34 @@ void Map::renderSync() {
 
     view.notifyMapChange(MapChangeWillStartRenderingFrame);
 
-    MapContext::RenderResult result = context->invokeSync<MapContext::RenderResult>(
-        &MapContext::renderSync, transform->getState(), FrameData{ view.getFramebufferSize() });
+    const bool fullyLoaded = context->invokeSync<bool>(
+            &MapContext::renderSync, transform->getState(), FrameData { view.getFramebufferSize() });
 
-    view.notifyMapChange(result.fullyLoaded ?
+    view.notifyMapChange(fullyLoaded ?
         MapChangeDidFinishRenderingFrameFullyRendered :
         MapChangeDidFinishRenderingFrame);
 
-    if (!result.fullyLoaded) {
+    if (!fullyLoaded) {
         renderState = RenderState::partial;
     } else if (renderState != RenderState::fully) {
         renderState = RenderState::fully;
         view.notifyMapChange(MapChangeDidFinishRenderingMapFullyRendered);
     }
-
-    if (transform->needsTransition()) {
-        update(Update(transform->updateTransitions(Clock::now())));
-    } else if (result.needsRerender) {
-        update();
-    }
 }
 
-void Map::update(Update update_) {
-    if (update_ == Update::Dimensions) {
+void Map::nudgeTransitions() {
+    Update flags = transform->updateTransitions(Clock::now());
+    if (data->getNeedsRepaint()) {
+        flags |= Update::Repaint;
+    }
+    update(flags);
+}
+
+void Map::update(Update flags) {
+    if (flags & Update::Dimensions) {
         transform->resize(view.getSize());
     }
-
-    context->invoke(&MapContext::triggerUpdate, transform->getState(), update_);
+    context->invoke(&MapContext::triggerUpdate, transform->getState(), flags);
 }
 
 #pragma mark - Style
@@ -106,24 +108,38 @@ std::string Map::getStyleJSON() const {
 
 void Map::cancelTransitions() {
     transform->cancelTransitions();
-    update();
+    update(Update::Repaint);
 }
 
 void Map::setGestureInProgress(bool inProgress) {
     transform->setGestureInProgress(inProgress);
-    update();
+    update(Update::Repaint);
+}
+
+#pragma mark -
+
+void Map::jumpTo(CameraOptions options) {
+    transform->jumpTo(options);
+    update(Update::Repaint);
+}
+
+void Map::easeTo(CameraOptions options) {
+    transform->easeTo(options);
+    update(options.zoom ? Update::Zoom : Update::Repaint);
 }
 
 #pragma mark - Position
 
 void Map::moveBy(double dx, double dy, const Duration& duration) {
     transform->moveBy(dx, dy, duration);
-    update();
+    update(Update::Repaint);
 }
 
 void Map::setLatLng(LatLng latLng, const Duration& duration) {
-    transform->setLatLng(latLng, duration);
-    update();
+    CameraOptions options;
+    options.duration = duration;
+    transform->setLatLng(latLng, options);
+    update(Update::Repaint);
 }
 
 LatLng Map::getLatLng() const {
@@ -131,9 +147,11 @@ LatLng Map::getLatLng() const {
 }
 
 void Map::resetPosition() {
-    transform->setAngle(0);
-    transform->setLatLng(LatLng(0, 0));
-    transform->setZoom(0);
+    CameraOptions options;
+    options.angle = 0;
+    options.center = LatLng(0, 0);
+    options.zoom = 0;
+    transform->jumpTo(options);
     update(Update::Zoom);
 }
 
@@ -164,29 +182,32 @@ double Map::getZoom() const {
 }
 
 void Map::setLatLngZoom(LatLng latLng, double zoom, const Duration& duration) {
-    transform->setLatLngZoom(latLng, zoom, duration);
+    CameraOptions options;
+    options.duration = duration;
+    transform->setLatLngZoom(latLng, zoom, options);
     update(Update::Zoom);
 }
 
-void Map::fitBounds(LatLngBounds bounds, EdgeInsets padding, const Duration& duration) {
+CameraOptions Map::cameraForLatLngBounds(LatLngBounds bounds, EdgeInsets padding) {
     AnnotationSegment segment = {
         {bounds.ne.latitude, bounds.sw.longitude},
         bounds.sw,
         {bounds.sw.latitude, bounds.ne.longitude},
         bounds.ne,
     };
-    fitBounds(segment, padding, duration);
+    return cameraForLatLngs(segment, padding);
 }
 
-void Map::fitBounds(AnnotationSegment segment, EdgeInsets padding, const Duration& duration) {
-    if (segment.empty()) {
-        return;
+CameraOptions Map::cameraForLatLngs(std::vector<LatLng> latLngs, EdgeInsets padding) {
+    CameraOptions options;
+    if (latLngs.empty()) {
+        return options;
     }
 
     // Calculate the bounds of the possibly rotated shape with respect to the viewport.
     vec2<> nePixel = {-INFINITY, -INFINITY};
     vec2<> swPixel = {INFINITY, INFINITY};
-    for (LatLng latLng : segment) {
+    for (LatLng latLng : latLngs) {
         vec2<> pixel = pixelForLatLng(latLng);
         swPixel.x = std::min(swPixel.x, pixel.x);
         nePixel.x = std::max(nePixel.x, pixel.x);
@@ -198,9 +219,9 @@ void Map::fitBounds(AnnotationSegment segment, EdgeInsets padding, const Duratio
     // Calculate the zoom level.
     double scaleX = (getWidth() - padding.left - padding.right) / size.x;
     double scaleY = (getHeight() - padding.top - padding.bottom) / size.y;
-    double minScale = std::fmin(scaleX, scaleY);
-    double zoom = std::log2(getScale() * minScale);
-    zoom = std::fmax(std::fmin(zoom, getMaxZoom()), getMinZoom());
+    double minScale = ::fmin(scaleX, scaleY);
+    double zoom = ::log2(getScale() * minScale);
+    zoom = ::fmax(::fmin(zoom, getMaxZoom()), getMinZoom());
 
     // Calculate the center point of a virtual bounds that is extended in all directions by padding.
     vec2<> paddedNEPixel = {
@@ -214,7 +235,9 @@ void Map::fitBounds(AnnotationSegment segment, EdgeInsets padding, const Duratio
     vec2<> centerPixel = (paddedNEPixel + paddedSWPixel) * 0.5;
     LatLng centerLatLng = latLngForPixel(centerPixel);
 
-    setLatLngZoom(centerLatLng, zoom, duration);
+    options.center = centerLatLng;
+    options.zoom = zoom;
+    return options;
 }
 
 void Map::resetZoom() {
@@ -245,17 +268,19 @@ uint16_t Map::getHeight() const {
 
 void Map::rotateBy(double sx, double sy, double ex, double ey, const Duration& duration) {
     transform->rotateBy(sx, sy, ex, ey, duration);
-    update();
+    update(Update::Repaint);
 }
 
 void Map::setBearing(double degrees, const Duration& duration) {
-    transform->setAngle(-degrees * M_PI / 180, duration);
-    update();
+    CameraOptions options;
+    options.duration = duration;
+    transform->setAngle(-degrees * M_PI / 180, options);
+    update(Update::Repaint);
 }
 
 void Map::setBearing(double degrees, double cx, double cy) {
     transform->setAngle(-degrees * M_PI / 180, cx, cy);
-    update();
+    update(Update::Repaint);
 }
 
 double Map::getBearing() const {
@@ -263,8 +288,24 @@ double Map::getBearing() const {
 }
 
 void Map::resetNorth() {
-    transform->setAngle(0, std::chrono::milliseconds(500));
-    update();
+    CameraOptions options;
+    options.duration = std::chrono::milliseconds(500);
+    transform->setAngle(0, options);
+    update(Update::Repaint);
+}
+
+
+#pragma mark - Pitch
+
+void Map::setPitch(double pitch, const Duration& duration) {
+    CameraOptions options;
+    options.duration = duration;
+    transform->setPitch(util::clamp(pitch, 0., 90.) * M_PI / 180, options);
+    update(Update::Repaint);
+}
+
+double Map::getPitch() const {
+    return transform->getPitch() / M_PI * 180;
 }
 
 
@@ -291,11 +332,11 @@ const LatLng Map::latLngForProjectedMeters(const ProjectedMeters projectedMeters
 }
 
 const vec2<double> Map::pixelForLatLng(const LatLng latLng) const {
-    return transform->getState().pixelForLatLng(latLng);
+    return transform->getState().latLngToPoint(latLng);
 }
 
 const LatLng Map::latLngForPixel(const vec2<double> pixel) const {
-    return transform->getState().latLngForPixel(pixel);
+    return transform->getState().pointToLatLng(pixel);
 }
 
 #pragma mark - Annotations
@@ -361,26 +402,30 @@ void Map::removeSprite(const std::string& name) {
 
 void Map::setDebug(bool value) {
     data->setDebug(value);
-    update();
+    update(Update::Repaint);
 }
 
 void Map::toggleDebug() {
     data->toggleDebug();
-    update();
+    update(Update::Repaint);
 }
 
 bool Map::getDebug() const {
     return data->getDebug();
 }
 
+void Map::setNeedsRepaint() {
+    data->setNeedsRepaint(true);
+}
+
 void Map::setCollisionDebug(bool value) {
     data->setCollisionDebug(value);
-    update();
+    update(Update::Repaint);
 }
 
 void Map::toggleCollisionDebug() {
     data->toggleCollisionDebug();
-    update();
+    update(Update::Repaint);
 }
 
 bool Map::getCollisionDebug() const {
@@ -418,11 +463,20 @@ std::vector<std::string> Map::getClasses() const {
 
 void Map::setDefaultTransitionDuration(const Duration& duration) {
     data->setDefaultTransitionDuration(duration);
-    update(Update::DefaultTransitionDuration);
+    update(Update::DefaultTransition);
 }
 
 Duration Map::getDefaultTransitionDuration() const {
     return data->getDefaultTransitionDuration();
+}
+
+void Map::setDefaultTransitionDelay(const Duration& delay) {
+    data->setDefaultTransitionDelay(delay);
+    update(Update::DefaultTransition);
+}
+
+Duration Map::getDefaultTransitionDelay() const {
+    return data->getDefaultTransitionDelay();
 }
 
 void Map::setSourceTileCacheSize(size_t size) {
