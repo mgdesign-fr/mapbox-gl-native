@@ -63,7 +63,6 @@ void HeadlessView::loadExtensions() {
 #endif
 
 #ifdef MBGL_USE_GLFW_WIN32
-    printf("glewInit()\n");
     glewInit();
 #endif
 
@@ -280,6 +279,10 @@ void HeadlessView::activate() {
     if (!glXMakeContextCurrent(xDisplay, glxPbuffer, glxPbuffer, glContext)) {
         throw std::runtime_error("Switching OpenGL context failed.\n");
     }
+#endif
+
+#if MBGL_USE_GLFW_WIN32
+    glfwMakeContextCurrent(display->window);
 #endif
 
     loadExtensions();
