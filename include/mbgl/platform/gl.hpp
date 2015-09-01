@@ -34,10 +34,17 @@
 #elif _WIN32
     #define GLEW_STATIC
     #include <GL/glew.h>
+    #ifndef _WIN64
+    #define GL_PROC __stdcall
+    #endif
 #else
     #define GL_GLEXT_PROTOTYPES
     #include <GL/gl.h>
     #include <GL/glext.h>
+#endif
+
+#ifndef GL_PROC
+#define GL_PROC
 #endif
 
 namespace mbgl {
@@ -61,7 +68,7 @@ public:
     static std::vector<ExtensionFunctionBase*>& functions();
     typedef std::pair<const char *, const char *> Probe;
     std::vector<Probe> probes;
-    void (*ptr)();
+    void (GL_PROC *ptr)();
 };
 
 template <class>
@@ -80,11 +87,11 @@ public:
     }
 
     R operator()(Args... args) const {
-        return (*reinterpret_cast<R (*)(Args...)>(ptr))(std::forward<Args>(args)...);
+        return (*reinterpret_cast<R (GL_PROC *)(Args...)>(ptr))(std::forward<Args>(args)...);
     }
 };
 
-using glProc = void (*)();
+using glProc = void (GL_PROC *)();
 void InitializeExtensions(glProc (*getProcAddress)(const char *));
 
 }
