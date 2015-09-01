@@ -68,7 +68,7 @@ public:
     static std::vector<ExtensionFunctionBase*>& functions();
     typedef std::pair<const char *, const char *> Probe;
     std::vector<Probe> probes;
-    void (GL_PROC *ptr)();
+    void (*ptr)();
 };
 
 template <class>
@@ -91,7 +91,7 @@ public:
     }
 };
 
-using glProc = void (GL_PROC *)();
+using glProc = void (*)();
 void InitializeExtensions(glProc (*getProcAddress)(const char *));
 
 }
