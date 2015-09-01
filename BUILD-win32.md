@@ -50,10 +50,10 @@ TODO list used versions
 
 1. `curl`
   ```
-  ./configure --prefix=/mingw
+  ./configure --with-winssl --prefix=/mingw
   make -j & make install
   # there is probably a way to build both shared & static at once.
-  ./configure --enable-static --disable-shared --prefix=/mingw
+  ./configure --enable-static --disable-shared --with-winssl --prefix=/mingw
   make -j & make install
   ```
 
