@@ -31,8 +31,9 @@ TEST(API, RepeatedRender) {
             promise.set_value(std::move(image));
         });
         auto result = promise.get_future().get();
-        ASSERT_EQ(256, result->width);
-        ASSERT_EQ(512, result->height);
+        ASSERT_NE(nullptr, result.get());
+        EXPECT_EQ(256, result->width);
+        EXPECT_EQ(512, result->height);
         const std::string png = util::compress_png(result->width, result->height, result->pixels.get());
         util::write_file("test/fixtures/api/1.png", png);
     }
@@ -44,8 +45,9 @@ TEST(API, RepeatedRender) {
             promise.set_value(std::move(image));
         });
         auto result = promise.get_future().get();
-        ASSERT_EQ(256, result->width);
-        ASSERT_EQ(512, result->height);
+        ASSERT_NE(nullptr, result.get());
+        EXPECT_EQ(256, result->width);
+        EXPECT_EQ(512, result->height);
         const std::string png = util::compress_png(result->width, result->height, result->pixels.get());
         util::write_file("test/fixtures/api/2.png", png);
     }
