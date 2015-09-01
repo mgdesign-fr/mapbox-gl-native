@@ -3,6 +3,10 @@
 
 #include <gtest/gtest.h>
 
+#ifdef _WIN32
+#define pid_t void*
+#endif
+
 #define SCOPED_TEST(name) \
     static class name { \
         bool completed = false; \

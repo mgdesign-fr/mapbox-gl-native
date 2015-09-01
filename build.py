@@ -6,13 +6,14 @@ import sys
 UNIT_TESTS=None
 
 if "--test" in sys.argv:
-  UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc"]
-  #UNIT_TESTS += ["sprite_atlas.cpp", "sprite_image.cpp", "sprite_parser.cpp", "sprite_store.cpp"]
-  #UNIT_TESTS += ["annotations.cpp", "api_misuse.cpp", "repeated_render.cpp", "set_style.cpp"]
-  UNIT_TESTS += ["annotations.cpp"]
-  #UNIT_TESTS += ["assert.cpp", "bilinear.cpp", "binpack.cpp", "clip_ids.cpp", "comparisons.cpp", "enums.cpp", "functions.cpp", "geo.cpp", "map.cpp", "map_context.cpp", "mapbox.cpp", "merge_lines.cpp", "style_parser.cpp", "test_conversions.cpp", "thread.cpp", "tile.cpp", "transform.cpp", "variant.cpp", "work_queue.cpp"]
-  # needs server # UNIT_TESTS += ["cache_response.cpp", "cache_revalidate.cpp", "database.cpp", "directory_reading.cpp", "file_reading.cpp", "http_cancel.cpp", "http_coalescing.cpp"] # ...
-  #UNIT_TESTS += ["glyph_store.cpp", "pending_resources.cpp", "resources_loading.cpp", "sprite.cpp"]
+  UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc", "storage.cpp"]
+  UNIT_TESTS += ["sprite_atlas.cpp", "sprite_image.cpp", "sprite_parser.cpp", "sprite_store.cpp"]
+  UNIT_TESTS += ["annotations.cpp", "api_misuse.cpp", "repeated_render.cpp", "set_style.cpp"]
+  UNIT_TESTS += ["custom_sprites.cpp", "headless.cpp"]
+  UNIT_TESTS += ["assert.cpp", "bilinear.cpp", "binpack.cpp", "clip_ids.cpp", "comparisons.cpp", "enums.cpp", "functions.cpp", "geo.cpp", "map.cpp", "map_context.cpp", "mapbox.cpp", "merge_lines.cpp", "style_parser.cpp", "test_conversions.cpp", "thread.cpp", "tile.cpp", "transform.cpp", "variant.cpp", "work_queue.cpp"]
+  # needs server #
+  UNIT_TESTS += ["cache_response.cpp", "cache_revalidate.cpp", "database.cpp", "directory_reading.cpp", "file_reading.cpp", "http_cancel.cpp", "http_coalescing.cpp", "http_error.cpp", "http_header_parsing.cpp", "http_issue_1369.cpp", "http_load.cpp", "http_other_loop.cpp", "http_reading.cpp"]
+  UNIT_TESTS += ["glyph_store.cpp", "pending_resources.cpp", "resources_loading.cpp", "sprite.cpp"]
 
 BUILD_RENDER_EXE = UNIT_TESTS is None
 BUILD_WINAPP_EXE = UNIT_TESTS is None
