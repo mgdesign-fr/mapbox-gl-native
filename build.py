@@ -15,6 +15,7 @@ if "--test" in sys.argv:
   #UNIT_TESTS += ["glyph_store.cpp", "pending_resources.cpp", "resources_loading.cpp", "sprite.cpp"]
 
 BUILD_RENDER_EXE = UNIT_TESTS is None
+BUILD_WINAPP_EXE = UNIT_TESTS is None
 LINK_MAPBOX_GL_DLL = UNIT_TESTS is None
 
 RELEASE_FLAGS = ["-DNDEBUG", "-O3"]   # -g ?
@@ -155,6 +156,30 @@ if BUILD_RENDER_EXE:
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
   clang_cmd += [ "-L." ]
   clang_cmd += [ "-o", "render.exe" ]
+  # IMPORTANT(nico) - must come *after* the input files
+  # IMPORTANT(nico) - order is important for the linker
+  #clang_cmd += [ "-luv" ]
+  clang_cmd += [ "-lwsock32", "-lws2_32", "-liphlpapi", "-lpsapi" ]                                          # NOTE(nico) - libuv-0.10.36
+  clang_cmd += [ "-lmapbox-gl" ]
+  #clang_cmd += [ "-Wl,-Bstatic", "-lboost_program_options" ]
+  clang_cmd += [ "-lboost_program_options" ]
+  print clang_cmd
+  subprocess.call(clang_cmd)
+
+# Build `winapp.exe`
+#
+if BUILD_WINAPP_EXE:
+  clang_cmd = [ "g++", "-pthread" ]
+  clang_cmd += CPP_FLAGS
+  clang_cmd += [ "linux\\main.cpp" ]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+  clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
+  clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
+  clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
+  clang_cmd += [ "-L." ]
+  clang_cmd += [ "-o", "winapp.exe" ]
   # IMPORTANT(nico) - must come *after* the input files
   # IMPORTANT(nico) - order is important for the linker
   #clang_cmd += [ "-luv" ]
