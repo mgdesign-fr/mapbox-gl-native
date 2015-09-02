@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
     view = std::make_unique<GLFWView>(fullscreen, benchmark);
 
-    mbgl::SQLiteCache cache("/tmp/mbgl-cache.db");
+    mbgl::SQLiteCache cache("c:\\temp\\mbgl-cache.db");
     mbgl::DefaultFileSource fileSource(&cache);
 
     // Set access token if present
