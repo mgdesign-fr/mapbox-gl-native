@@ -93,7 +93,7 @@ MBGL_C_EXPORT
 void mbgl_Map_setStyleURL(mbgl_Map_t* map, const char* url);
 
 MBGL_C_EXPORT
-void mbgl_Map_setStyleJSON(mbgl_Map_t* map, const char* json, const char* base = "");
+void mbgl_Map_setStyleJSON(mbgl_Map_t* map, const char* json/*TODO, const char* base = ""*/);
 
 MBGL_C_EXPORT
 const char* mbgl_Map_getStyleURL(mbgl_Map_t* map);

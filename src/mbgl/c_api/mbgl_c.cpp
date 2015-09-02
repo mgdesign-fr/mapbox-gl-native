@@ -144,3 +144,88 @@ int mbgl_Map_close(mbgl_Map_t* map) {
   }
   return 0;
 }
+
+MBGL_C_EXPORT
+void mbgl_Map_setStyleURL(mbgl_Map_t* map, const char* url) {
+  map->map->setStyleURL(std::string(url));
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_setStyleJSON(mbgl_Map_t* map, const char* json) {
+  map->map->setStyleJSON(std::string(json));
+}
+
+MBGL_C_EXPORT
+const char* mbgl_Map_getStyleURL(mbgl_Map_t* map) {
+  return map->map->getStyleURL().c_str();
+}
+
+MBGL_C_EXPORT
+const char* mbgl_Map_getStyleJSON(mbgl_Map_t* map) {
+  return map->map->getStyleJSON().c_str();
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, double zoom/*TODO , const Duration& = Duration::zero()*/) {
+  map->map->setLatLngZoom(mbgl::LatLng(latitude, longitude), zoom);
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey/*TODO, const Duration& = Duration::zero()*/) {
+  map->map->rotateBy(sx, sy, ex, ey);
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees/*TODO, const Duration& = Duration::zero()*/) {
+  map->map->setBearing(degrees);
+}
+
+MBGL_C_EXPORT
+double mbgl_Map_getBearing(mbgl_Map_t* map) {
+  return map->map->getBearing();
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_resetNorth(mbgl_Map_t* map) {
+  map->map->resetNorth();
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_setDebug(mbgl_Map_t* map, int value) {
+  map->map->setDebug(value);
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_toggleDebug(mbgl_Map_t* map) {
+  map->map->toggleDebug();
+}
+
+MBGL_C_EXPORT
+int mbgl_Map_getDebug(mbgl_Map_t* map) {
+  return map->map->getDebug();
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_setNeedsRepaint(mbgl_Map_t* map) {
+  return map->map->setNeedsRepaint();
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_setCollisionDebug(mbgl_Map_t* map, int value) {
+  map->map->setCollisionDebug(value);
+}
+
+MBGL_C_EXPORT
+void mbgl_Map_toggleCollisionDebug(mbgl_Map_t* map) {
+  map->map->toggleCollisionDebug();
+}
+
+MBGL_C_EXPORT
+int mbgl_Map_getCollisionDebug(mbgl_Map_t* map) {
+  return map->map->getCollisionDebug();
+}
+
+MBGL_C_EXPORT
+int mbgl_Map_isFullyLoaded(mbgl_Map_t* map) {
+  return map->map->isFullyLoaded();
+}
