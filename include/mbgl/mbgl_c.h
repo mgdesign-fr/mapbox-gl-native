@@ -38,19 +38,19 @@ MBGL_C_EXPORT
 int mbgl_GLFWView_close(mbgl_GLFWView_t* view);
 
 MBGL_C_EXPORT
-int mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(), void* userdata);
+void mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(void*), void* userdata);
 
 MBGL_C_EXPORT
-int mbgl_GLFWView_setShouldClose(mbgl_GLFWView_t* view);
+void mbgl_GLFWView_setShouldClose(mbgl_GLFWView_t* view);
 
 MBGL_C_EXPORT
-int mbgl_GLFWView_setWindowTitle(mbgl_GLFWView_t* view, const char* title);
+void mbgl_GLFWView_setWindowTitle(mbgl_GLFWView_t* view, const char* title);
 
 MBGL_C_EXPORT
-int mbgl_GLFWView_run(mbgl_GLFWView_t* view);
+void mbgl_GLFWView_run(mbgl_GLFWView_t* view);
 
 MBGL_C_EXPORT
-int mbgl_GLFWView_report(mbgl_GLFWView_t* view);
+void mbgl_GLFWView_report(mbgl_GLFWView_t* view, float duration);
 
 /*****************************************************************************/
 
