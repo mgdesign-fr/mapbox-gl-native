@@ -38,7 +38,7 @@ MBGL_C_EXPORT
 int mbgl_GLFWView_close(mbgl_GLFWView_t* view);
 
 MBGL_C_EXPORT
-void mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(void*), void* userdata);
+void mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(mbgl_GLFWView_t*, void*), void* userdata);
 
 MBGL_C_EXPORT
 void mbgl_GLFWView_setShouldClose(mbgl_GLFWView_t* view);

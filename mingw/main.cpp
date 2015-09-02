@@ -8,6 +8,8 @@
 #include <mbgl/storage/default_file_source.hpp>
 #include <mbgl/storage/sqlite_cache.hpp>
 
+#include <mbgl/mbgl_c.h>
+
 #include <signal.h>
 #include <getopt.h>
 #include <fstream>
@@ -15,16 +17,12 @@
 #include <cstdlib>
 #include <cstdio>
 
-namespace {
-
-std::unique_ptr<GLFWView> view;
-
-}
+static mbgl_GLFWView_t* view = NULL;
 
 void quit_handler(int) {
     if (view) {
         mbgl::Log::Info(mbgl::Event::Setup, "waiting for quit...");
-        view->setShouldClose();
+        mbgl_GLFWView_setShouldClose(view);
     } else {
         exit(0);
     }
@@ -36,7 +34,7 @@ int main(int argc, char *argv[]) {
     std::string style;
     double latitude = 0, longitude = 0;
     double bearing = 0, zoom = 1;
-    bool skipConfig = false;
+    bool skipConfig = true;
 
     const struct option long_options[] = {
         {"fullscreen", no_argument, 0, 'f'},
@@ -93,35 +91,40 @@ int main(int argc, char *argv[]) {
         mbgl::Log::Info(mbgl::Event::General, "BENCHMARK MODE: Some optimizations are disabled.");
     }
 
-    view = std::make_unique<GLFWView>(fullscreen, benchmark);
+    mbgl_GLFWView_init(fullscreen, benchmark, &view);
 
-    mbgl::SQLiteCache cache("c:\\temp\\mbgl-cache.db");
-    mbgl::DefaultFileSource fileSource(&cache);
+    mbgl_SQLiteCache_t* cache = NULL;
+    mbgl_SQLiteCache_init("cache.sqlite", &cache);
+
+    mbgl_DefaultFileSource_t* fileSource = NULL;
+    mbgl_DefaultFileSource_init(cache, &fileSource);
 
     // Set access token if present
     const char *token = getenv("MAPBOX_ACCESS_TOKEN");
     if (token == nullptr) {
         mbgl::Log::Warning(mbgl::Event::Setup, "no access token set. mapbox.com tiles won't work.");
     } else {
-        fileSource.setAccessToken(std::string(token));
+        mbgl_DefaultFileSource_setAccessToken(fileSource, token);
     }
 
-    mbgl::Map map(*view, fileSource);
+    mbgl_Map_t* map = NULL;
+    mbgl_Map_init(view, fileSource, &map);
 
     // Load settings
     mbgl::Settings_JSON settings;
 
     if (skipConfig) {
-        map.setLatLngZoom(mbgl::LatLng(latitude, longitude), zoom);
-        map.setBearing(bearing);
+        mbgl_Map_setLatLngZoom(map, latitude, longitude, zoom);
+        mbgl_Map_setBearing(map, bearing);
         mbgl::Log::Info(mbgl::Event::General, "Location: %f/%f (z%.2f, %.2f deg)", latitude, longitude, zoom, bearing);
     } else {
-        map.setLatLngZoom(mbgl::LatLng(settings.latitude, settings.longitude), settings.zoom);
-        map.setBearing(settings.bearing);
-        map.setDebug(settings.debug);
+        mbgl_Map_setLatLngZoom(map, settings.latitude, settings.longitude, settings.zoom);
+        mbgl_Map_setBearing(map, settings.bearing);
+        mbgl_Map_setDebug(map, settings.debug);
     }
 
-    view->setChangeStyleCallback([&map] () {
+    mbgl_GLFWView_setChangeStyleCallback(view, [](mbgl_GLFWView_t* view, void *userdata) {
+        mbgl_Map_t* map = (mbgl_Map_t*)userdata;
         static uint8_t currentStyleIndex;
 
         if (++currentStyleIndex == mbgl::util::defaultStyles.size()) {
@@ -129,23 +132,24 @@ int main(int argc, char *argv[]) {
         }
 
         const auto& newStyle = mbgl::util::defaultStyles[currentStyleIndex];
-        map.setStyleURL(newStyle.first);
-        view->setWindowTitle(newStyle.second);
+        mbgl_Map_setStyleURL(map, newStyle.first.c_str());
+        mbgl_GLFWView_setWindowTitle(view, newStyle.second.c_str());
 
         mbgl::Log::Info(mbgl::Event::Setup, std::string("Changed style to: ") + newStyle.first);
-    });
+    }, map);
 
     // Load style
     if (style.empty()) {
         const auto& newStyle = mbgl::util::defaultStyles.front();
         style = newStyle.first;
-        view->setWindowTitle(newStyle.second);
+        mbgl_GLFWView_setWindowTitle(view, newStyle.second.c_str());
     }
 
-    map.setStyleURL(style);
+    mbgl_Map_setStyleURL(map, style.c_str());
 
-    view->run();
+    mbgl_GLFWView_run(view);
 
+    /*
     // Save settings
     mbgl::LatLng latLng = map.getLatLng();
     settings.latitude = latLng.latitude;
@@ -156,6 +160,7 @@ int main(int argc, char *argv[]) {
     if (!skipConfig) {
         settings.save();
     }
+    */
     mbgl::Log::Info(mbgl::Event::General,
                     "Exit location: --lat=\"%f\" --lon=\"%f\" --zoom=\"%f\" --bearing \"%f\"",
                     settings.latitude, settings.longitude, settings.zoom, settings.bearing);

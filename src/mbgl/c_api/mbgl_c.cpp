@@ -31,9 +31,9 @@ int mbgl_GLFWView_close(mbgl_GLFWView_t* view)
 }
 
 MBGL_C_EXPORT
-void mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(void*), void* userdata) {
-	view->view->setChangeStyleCallback([&] {
-		callback(userdata);
+void mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(mbgl_GLFWView_t* view, void*), void* userdata) {
+	view->view->setChangeStyleCallback([view, callback, userdata]() {
+		callback(view, userdata);
 	});
 }
 
@@ -130,7 +130,7 @@ struct mbgl_Map_t {
 MBGL_C_EXPORT
 int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out) {
 	mbgl_Map_t* result = (mbgl_Map_t*)malloc(sizeof(*result));
-  result->map = new mbgl::Map(view->view, fileSource->fileSource);
+  result->map = new mbgl::Map(*view->view, *fileSource->fileSource);
   *out = result;
   return 0;
 }
