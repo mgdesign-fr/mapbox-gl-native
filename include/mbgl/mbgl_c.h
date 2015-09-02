@@ -54,6 +54,46 @@ int mbgl_GLFWView_report(mbgl_GLFWView_t* view);
 
 /*****************************************************************************/
 
+///////////////////////////////////////////////////////////////////////////////
+// SQLiteCache type wrapper
+typedef struct mbgl_SQLiteCache_t mbgl_SQLiteCache_t;
+
+int mbgl_SQLiteCache_init(const char* path, mbgl_SQLiteCache_t** out);
+int mbgl_SQLiteCache_close(mbgl_SQLiteCache_t* sqliteCache);
+
+///////////////////////////////////////////////////////////////////////////////
+// DefaultFileSource type wrapper
+typedef struct mbgl_DefaultFileSource_t mbgl_DefaultFileSource_t;
+
+int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out);
+int mbgl_DefaultFileSource_close(mbgl_DefaultFileSource_t* defaultFileSource);
+
+void mbgl_DefaultFileSource_setAccessToken(mbgl_DefaultFileSource_t* fileSource, const char* accessToken);
+const char* mbgl_DefaultFileSource_getAccessToken(mbgl_DefaultFileSource_t* fileSource);
+
+///////////////////////////////////////////////////////////////////////////////
+// Map type wrapper
+typedef struct mbgl_Map_t mbgl_Map_t;
+
+int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out);
+int mbgl_Map_close(mbgl_Map_t* map);
+
+// Styling
+void mbgl_Map_setStyleURL(mbgl_Map_t* map, const char* url);
+void mbgl_Map_setStyleJSON(mbgl_Map_t* map, const char* json, const char* base = "");
+const char* mbgl_Map_getStyleURL(mbgl_Map_t* map) const;
+const char* mbgl_Map_getStyleJSON(mbgl_Map_t* map) const;
+
+// Debug
+void mbgl_Map_setDebug(mbgl_Map_t* map, int value);
+void mbgl_Map_toggleDebug(mbgl_Map_t* map);
+int mbgl_Map_getDebug(mbgl_Map_t* map) const;
+void mbgl_Map_setNeedsRepaint(mbgl_Map_t* map);
+void mbgl_Map_setCollisionDebug(mbgl_Map_t* map, int value);
+void mbgl_Map_toggleCollisionDebug(mbgl_Map_t* map);
+int mbgl_Map_getCollisionDebug(mbgl_Map_t* map) const;
+int mbgl_Map_isFullyLoaded(mbgl_Map_t* map) const;
+
 #ifdef __cplusplus
 }
 #endif
