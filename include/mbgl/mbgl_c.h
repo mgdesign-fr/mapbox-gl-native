@@ -101,6 +101,27 @@ const char* mbgl_Map_getStyleURL(mbgl_Map_t* map);
 MBGL_C_EXPORT
 const char* mbgl_Map_getStyleJSON(mbgl_Map_t* map);
 
+// Scale
+// TODO other functions
+MBGL_C_EXPORT
+void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, double zoom/*TODO , const Duration& = Duration::zero()*/);
+
+// Rotation
+MBGL_C_EXPORT
+void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey/*TODO, const Duration& = Duration::zero()*/);
+
+MBGL_C_EXPORT
+void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees/*TODO, const Duration& = Duration::zero()*/);
+
+MBGL_C_EXPORT
+void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees, double cx, double cy);
+
+MBGL_C_EXPORT
+double mbgl_Map_getBearing(mbgl_Map_t* map);
+
+MBGL_C_EXPORT
+void mbgl_Map_resetNorth(mbgl_Map_t* map);
+
 // Debug
 MBGL_C_EXPORT
 void mbgl_Map_setDebug(mbgl_Map_t* map, int value);
