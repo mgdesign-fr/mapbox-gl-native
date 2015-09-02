@@ -1,13 +1,3 @@
-#include <mbgl/mbgl.hpp>
-#include "../platform/default/default_styles.hpp"
-#include <mbgl/util/uv.hpp>
-#include <mbgl/platform/log.hpp>
-#include <mbgl/platform/platform.hpp>
-#include <mbgl/platform/default/settings_json.hpp>
-#include <mbgl/platform/default/glfw_view.hpp>
-#include <mbgl/storage/default_file_source.hpp>
-#include <mbgl/storage/sqlite_cache.hpp>
-
 #include <mbgl/mbgl_c.h>
 
 #include <signal.h>
@@ -19,9 +9,24 @@
 
 static mbgl_GLFWView_t* view = NULL;
 
+struct DefaultStyle {
+    const char* path;
+    const char* name;
+};
+
+static const DefaultStyle defaultStyles[] = {
+    { "asset://styles/styles/streets-v8.json", "Mapbox Streets" },
+    { "asset://styles/styles/emerald-v8.json", "Emerald" },
+    { "asset://styles/styles/light-v8.json", "Light" },
+    { "asset://styles/styles/dark-v8.json", "Dark" },
+    { "asset://styles/styles/satellite-v8.json", "Satellite" }
+};
+
+static int numDefaultStyles = (sizeof(defaultStyles) / sizeof(defaultStyles[0]));
+
 void quit_handler(int) {
     if (view) {
-        mbgl::Log::Info(mbgl::Event::Setup, "waiting for quit...");
+        printf("[INFO] waiting for quit...");
         mbgl_GLFWView_setShouldClose(view);
     } else {
         exit(0);
@@ -34,7 +39,7 @@ int main(int argc, char *argv[]) {
     std::string style;
     double latitude = 0, longitude = 0;
     double bearing = 0, zoom = 1;
-    bool skipConfig = true;
+    bool skipConfig = false;
 
     const struct option long_options[] = {
         {"fullscreen", no_argument, 0, 'f'},
@@ -88,7 +93,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (benchmark) {
-        mbgl::Log::Info(mbgl::Event::General, "BENCHMARK MODE: Some optimizations are disabled.");
+        printf("[INFO] BENCHMARK MODE: Some optimizations are disabled.");
     }
 
     mbgl_GLFWView_init(fullscreen, benchmark, &view);
@@ -102,7 +107,7 @@ int main(int argc, char *argv[]) {
     // Set access token if present
     const char *token = getenv("MAPBOX_ACCESS_TOKEN");
     if (token == nullptr) {
-        mbgl::Log::Warning(mbgl::Event::Setup, "no access token set. mapbox.com tiles won't work.");
+        printf("[WARNING] no access token set. mapbox.com tiles won't work.");
     } else {
         mbgl_DefaultFileSource_setAccessToken(fileSource, token);
     }
@@ -110,39 +115,44 @@ int main(int argc, char *argv[]) {
     mbgl_Map_t* map = NULL;
     mbgl_Map_init(view, fileSource, &map);
 
+    mbgl_Map_setLatLngZoom(map, latitude, longitude, zoom);
+    mbgl_Map_setBearing(map, bearing);
+    printf("[INFO] Location: %f/%f (z%.2f, %.2f deg)", latitude, longitude, zoom, bearing);
+
+    /*
     // Load settings
     mbgl::Settings_JSON settings;
 
     if (skipConfig) {
         mbgl_Map_setLatLngZoom(map, latitude, longitude, zoom);
         mbgl_Map_setBearing(map, bearing);
-        mbgl::Log::Info(mbgl::Event::General, "Location: %f/%f (z%.2f, %.2f deg)", latitude, longitude, zoom, bearing);
+        printf("[INFO] Location: %f/%f (z%.2f, %.2f deg)", latitude, longitude, zoom, bearing);
     } else {
         mbgl_Map_setLatLngZoom(map, settings.latitude, settings.longitude, settings.zoom);
         mbgl_Map_setBearing(map, settings.bearing);
         mbgl_Map_setDebug(map, settings.debug);
     }
-
+    */
     mbgl_GLFWView_setChangeStyleCallback(view, [](mbgl_GLFWView_t* view, void *userdata) {
         mbgl_Map_t* map = (mbgl_Map_t*)userdata;
         static uint8_t currentStyleIndex;
 
-        if (++currentStyleIndex == mbgl::util::defaultStyles.size()) {
+        if (++currentStyleIndex == numDefaultStyles) {
             currentStyleIndex = 0;
         }
 
-        const auto& newStyle = mbgl::util::defaultStyles[currentStyleIndex];
-        mbgl_Map_setStyleURL(map, newStyle.first.c_str());
-        mbgl_GLFWView_setWindowTitle(view, newStyle.second.c_str());
+        const auto& newStyle = defaultStyles[currentStyleIndex];
+        mbgl_Map_setStyleURL(map, newStyle.path);
+        mbgl_GLFWView_setWindowTitle(view, newStyle.name);
 
-        mbgl::Log::Info(mbgl::Event::Setup, std::string("Changed style to: ") + newStyle.first);
+        printf("[INFO] Changed style to: %s", newStyle.path);
     }, map);
 
     // Load style
     if (style.empty()) {
-        const auto& newStyle = mbgl::util::defaultStyles.front();
-        style = newStyle.first;
-        mbgl_GLFWView_setWindowTitle(view, newStyle.second.c_str());
+        const auto& newStyle = defaultStyles[0];
+        style = newStyle.path;
+        mbgl_GLFWView_setWindowTitle(view, newStyle.name);
     }
 
     mbgl_Map_setStyleURL(map, style.c_str());
@@ -161,9 +171,8 @@ int main(int argc, char *argv[]) {
         settings.save();
     }
     */
-    mbgl::Log::Info(mbgl::Event::General,
-                    "Exit location: --lat=\"%f\" --lon=\"%f\" --zoom=\"%f\" --bearing \"%f\"",
-                    settings.latitude, settings.longitude, settings.zoom, settings.bearing);
+    printf("[INFO] TODO !! Exit location: --lat=\"%f\" --lon=\"%f\" --zoom=\"%f\" --bearing \"%f\"",
+                    latitude, longitude, zoom, bearing);
 
     return 0;
 }
