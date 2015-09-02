@@ -109,5 +109,15 @@ int mbgl_DefaultFileSource_close(mbgl_DefaultFileSource_t* defaultFileSource) {
   return 0;
 }
 
+MBGL_C_EXPORT
+void mbgl_DefaultFileSource_setAccessToken(mbgl_DefaultFileSource_t* fileSource, const char* accessToken) {
+  fileSource->fileSource->setAccessToken(std::string(accessToken));
+}
+
+MBGL_C_EXPORT
+const char* mbgl_DefaultFileSource_getAccessToken(mbgl_DefaultFileSource_t* fileSource) {
+  return fileSource->fileSource->getAccessToken().c_str();
+}
+
 /*****************************************************************************/
 
