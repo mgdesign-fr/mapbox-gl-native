@@ -89,13 +89,6 @@ int main(int argc, char *argv[]) {
 
     }
 
-    // sigint handling
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = quit_handler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
-
     if (benchmark) {
         mbgl::Log::Info(mbgl::Event::General, "BENCHMARK MODE: Some optimizations are disabled.");
     }
