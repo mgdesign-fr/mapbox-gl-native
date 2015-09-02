@@ -1,6 +1,8 @@
 #include <mbgl/mbgl_c.h>
 #include <mbgl/mbgl.hpp>
 #include <mbgl/platform/default/glfw_view.hpp>
+#include <mbgl/storage/default_file_source.hpp>
+#include <mbgl/storage/sqlite_cache.hpp>
 
 /*****************************************************************************/
 
@@ -53,6 +55,58 @@ void mbgl_GLFWView_run(mbgl_GLFWView_t* view) {
 MBGL_C_EXPORT
 void mbgl_GLFWView_report(mbgl_GLFWView_t* view, float duration) {
 	view->view->report(duration);
+}
+
+/*****************************************************************************/
+
+struct mbgl_SQLiteCache_t {
+  mbgl::SQLiteCache* cache;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_SQLiteCache_init(const char* path, mbgl_SQLiteCache_t** out) {
+	mbgl_SQLiteCache_t* result = (mbgl_SQLiteCache_t*)malloc(sizeof(*result));
+  result->cache = new mbgl::SQLiteCache(std::string(path));
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_SQLiteCache_close(mbgl_SQLiteCache_t* sqliteCache) {
+  if(sqliteCache != 0) {
+    delete sqliteCache->cache;
+    sqliteCache->cache = 0;
+    free(sqliteCache);
+  }
+  return 0;
+}
+
+/*****************************************************************************/
+
+struct mbgl_DefaultFileSource_t {
+  mbgl::DefaultFileSource* fileSource;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out) {
+	mbgl_DefaultFileSource_t* result = (mbgl_DefaultFileSource_t*)malloc(sizeof(*result));
+  result->fileSource = new mbgl::DefaultFileSource(cache->cache);
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_DefaultFileSource_close(mbgl_DefaultFileSource_t* defaultFileSource) {
+  if(defaultFileSource != 0) {
+    delete defaultFileSource->fileSource;
+    defaultFileSource->fileSource = 0;
+    free(defaultFileSource);
+  }
+  return 0;
 }
 
 /*****************************************************************************/

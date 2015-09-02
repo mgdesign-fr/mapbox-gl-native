@@ -112,10 +112,10 @@ void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double 
 
 MBGL_C_EXPORT
 void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees/*TODO, const Duration& = Duration::zero()*/);
-/* compile error
-MBGL_C_EXPORT
-void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees, double cx, double cy);
-*/
+
+/*TODO MBGL_C_EXPORT
+void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees, double cx, double cy);*/
+
 MBGL_C_EXPORT
 double mbgl_Map_getBearing(mbgl_Map_t* map);
 
