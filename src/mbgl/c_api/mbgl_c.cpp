@@ -121,3 +121,26 @@ const char* mbgl_DefaultFileSource_getAccessToken(mbgl_DefaultFileSource_t* file
 
 /*****************************************************************************/
 
+struct mbgl_Map_t {
+  mbgl::Map* map;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out) {
+	mbgl_Map_t* result = (mbgl_Map_t*)malloc(sizeof(*result));
+  result->map = new mbgl::Map(view->view, fileSource->fileSource);
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_Map_close(mbgl_Map_t* map) {
+  if(map != 0) {
+    delete map->map;
+    map->map = 0;
+    free(map);
+  }
+  return 0;
+}
