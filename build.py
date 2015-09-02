@@ -173,7 +173,7 @@ if BUILD_RENDER_EXE:
 if BUILD_WINAPP_EXE:
   clang_cmd = [ "g++", "-pthread" ]
   clang_cmd += CPP_FLAGS
-  clang_cmd += [ "linux\\main.cpp" ]
+  clang_cmd += [ "mingw\\main.cpp" ]
   clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
