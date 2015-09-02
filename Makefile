@@ -10,6 +10,9 @@ export XCPRETTY := $(shell ./scripts/xcpretty.sh)
 else ifeq ($(shell uname -s), Linux)
 export BUILD = linux
 export JOBS ?= $(shell grep --count processor /proc/cpuinfo)
+else ifeq ($(shell uname -s), MINGW32_NT-6.1)
+export BUILD = mingw
+export JOBS ?= $(NUMBER_OF_PROCESSORS)
 else
 $(error Cannot determine build platform)
 endif
