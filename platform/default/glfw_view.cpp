@@ -346,8 +346,21 @@ void GLFWView::onMouseMove(GLFWwindow *window, double x, double y) {
 
 void GLFWView::run() {
     while (!glfwWindowShouldClose(window)) {
-        glfwWaitEvents();
-        const bool dirty = !clean.test_and_set();
+    
+        bool dirty = false;
+        if(benchmark)
+        {
+          // Force as much render as we can in benchmark mode.
+          glfwPollEvents();
+          dirty = true;
+        }
+        else
+        {
+          // Update only when necessary.
+          glfwWaitEvents();
+          dirty = !clean.test_and_set();
+        }
+        
         if (dirty) {
             const double started = glfwGetTime();
             map->renderSync();
