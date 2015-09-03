@@ -6,6 +6,7 @@ import sys
 UNIT_TESTS=None
 
 c_api_only = "--c_api_only" in sys.argv
+release_mode = "--release" in sys.argv
 
 if not c_api_only and "--test" in sys.argv:
   UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc", "storage.cpp"]
@@ -23,7 +24,7 @@ LINK_MAPBOX_GL_DLL = UNIT_TESTS is None
 
 RELEASE_FLAGS = ["-DNDEBUG", "-O3"]   # -g ?
 DEBUG_FLAGS = ["-DDEBUG", "-Og", "-g"]
-C_FLAGS = DEBUG_FLAGS + ["-fexceptions"] 
+C_FLAGS = (RELEASE_FLAGS if release_mode else DEBUG_FLAGS) + ["-fexceptions"] 
 CPP_FLAGS = C_FLAGS + ["-std=c++14", "-frtti"]
 
 FILES_TO_SKIP=0
