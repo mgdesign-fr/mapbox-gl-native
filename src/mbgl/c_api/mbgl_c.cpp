@@ -15,7 +15,7 @@ struct mbgl_GLFWView_t {
 int mbgl_GLFWView_init(int fullscreen, int benchmark, mbgl_GLFWView_t** out)
 {
 	mbgl_GLFWView_t* result = (mbgl_GLFWView_t*)malloc(sizeof(*result));
-	result->view = new GLFWView;
+	result->view = new GLFWView(fullscreen, benchmark);
 	*out = result;
 	return 0;
 }
