@@ -109,7 +109,7 @@ mbgl_SQLiteCache_close.argtypes = [ ctypes.POINTER(mbgl_SQLiteCache_t) ]
 mbgl_SQLiteCache_close.restype = ctypes.c_int
 
 
-# mbgl_DefaultFileSource_t pointer type
+# mbgl_DefaultFileSource_t type
 # 
 class mbgl_DefaultFileSource_t(ctypes.Structure):
   pass
@@ -147,7 +147,7 @@ mbgl_DefaultFileSource_getAccessToken.argtypes = [ ctypes.POINTER(mbgl_DefaultFi
 mbgl_DefaultFileSource_getAccessToken.restype = ctypes.c_char_p
 
 
-# mbgl_Transform_t pointer type
+# mbgl_Transform_t type
 # 
 class mbgl_Transform_t(ctypes.Structure):
   pass
@@ -247,3 +247,69 @@ mbgl_Transform_setPitch.restype = None
 mbgl_Transform_getPitch = _dll.mbgl_Transform_getPitch
 mbgl_Transform_getPitch.argtypes = [ ctypes.POINTER(mbgl_Transform_t)]
 mbgl_Transform_getPitch.restype = ctypes.c_double
+
+
+# mbgl_MapData_t type
+# 
+class mbgl_MapData_t(ctypes.Structure):
+  pass
+
+# mbgl_MapData_init
+#
+# SEE : int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out);
+# 
+mbgl_MapData_init = _dll.mbgl_MapData_init
+mbgl_MapData_init.argtypes = [ ctypes.c_int, ctypes.c_float, ctypes.POINTER(ctypes.POINTER(mbgl_MapData_t)) ]
+mbgl_MapData_init.restype = ctypes.c_int
+
+# mbgl_MapData_close
+#
+# SEE : int mbgl_MapData_close(mbgl_MapData_t* mapData);
+# 
+mbgl_MapData_close = _dll.mbgl_MapData_close
+mbgl_MapData_close.argtypes = [ ctypes.POINTER(mbgl_MapData_t) ]
+mbgl_MapData_close.restype = ctypes.c_int
+
+
+# mbgl_MapContext_t type
+# 
+class mbgl_MapContext_t(ctypes.Structure):
+  pass
+
+# mbgl_MapContext_init
+#
+# SEE : int mbgl_MapContext_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_MapData_t* mapData, mbgl_MapContext_t** out);
+# 
+mbgl_MapContext_init = _dll.mbgl_MapContext_init
+mbgl_MapContext_init.argtypes = [ ctypes.POINTER(mbgl_View_t), ctypes.POINTER(mbgl_DefaultFileSource_t), ctypes.POINTER(mbgl_MapData_t), ctypes.POINTER(ctypes.POINTER(mbgl_MapContext_t)) ]
+mbgl_MapContext_init.restype = ctypes.c_int
+
+# mbgl_MapContext_close
+#
+# SEE : int mbgl_MapContext_close(mbgl_MapContext_t* mapContext);
+# 
+mbgl_MapContext_close = _dll.mbgl_MapContext_close
+mbgl_MapContext_close.argtypes = [ ctypes.POINTER(mbgl_MapContext_t) ]
+mbgl_MapContext_close.restype = ctypes.c_int
+
+
+# mbgl_MapImmediate_t type
+# 
+class mbgl_MapImmediate_t(ctypes.Structure):
+  pass
+
+# mbgl_MapImmediate_init
+#
+# SEE : int mbgl_MapImmediate_init(mbgl_MapData_t* mapData, mbgl_MapContext_t* mapContext, mbgl_Transform_t* transform, mbgl_MapImmediate_t** out);
+# 
+mbgl_MapImmediate_init = _dll.mbgl_MapImmediate_init
+mbgl_MapImmediate_init.argtypes = [ ctypes.POINTER(mbgl_MapData_t), ctypes.POINTER(mbgl_MapContext_t), ctypes.POINTER(mbgl_Transform_t), ctypes.POINTER(ctypes.POINTER(mbgl_MapImmediate_t)) ]
+mbgl_MapImmediate_init.restype = ctypes.c_int
+
+# mbgl_MapImmediate_close
+#
+# SEE : int mbgl_MapImmediate_close(mbgl_MapImmediate_t* map);
+# 
+mbgl_MapImmediate_close = _dll.mbgl_MapImmediate_close
+mbgl_MapImmediate_close.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t) ]
+mbgl_MapImmediate_close.restype = ctypes.c_int

@@ -6,6 +6,7 @@
 #include <mbgl/storage/sqlite_cache.hpp>
 
 #include <mbgl/c_api/c_api_view.hpp>
+#include <mbgl/c_api/map_immediate.hpp>
 
 #include <cassert>
 
@@ -346,4 +347,82 @@ void mbgl_Transform_setPitch(mbgl_Transform_t* transform, double pitch) {
 MBGL_C_EXPORT
 double mbgl_Transform_getPitch(mbgl_Transform_t* transform) {
   return transform->transform->getPitch();
+}
+
+/*****************************************************************************/
+
+struct mbgl_MapData_t {
+  mbgl::MapData* mapData;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out) {
+  mbgl_MapData_t* result = (mbgl_MapData_t*)malloc(sizeof(*result));
+  result->mapData = new mbgl::MapData((mbgl::MapMode)mode, pixelRatio);
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_MapData_close(mbgl_MapData_t* mapData) {
+  if(mapData != 0) {
+    delete mapData->mapData;
+    mapData->mapData = 0;
+    free(mapData);
+  }
+  return 0;
+}
+
+/*****************************************************************************/
+
+struct mbgl_MapContext_t {
+  mbgl::MapContext* mapContext;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapContext_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_MapData_t* mapData, mbgl_MapContext_t** out) {
+  mbgl_MapContext_t* result = (mbgl_MapContext_t*)malloc(sizeof(*result));
+  result->mapContext = new mbgl::MapContext(*view->view, *fileSource->fileSource, *mapData->mapData);
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_MapContext_close(mbgl_MapContext_t* mapContext) {
+  if(mapContext != 0) {
+    delete mapContext->mapContext;
+    mapContext->mapContext = 0;
+    free(mapContext);
+  }
+  return 0;
+}
+
+/*****************************************************************************/
+
+struct mbgl_MapImmediate_t {
+  mbgl::MapImmediate* map;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapImmediate_init(mbgl_MapData_t* mapData, mbgl_MapContext_t* mapContext, mbgl_Transform_t* transform, mbgl_MapImmediate_t** out) {
+  mbgl_MapImmediate_t* result = (mbgl_MapImmediate_t*)malloc(sizeof(*result));
+  result->map = new mbgl::MapImmediate(mapData->mapData, mapContext->mapContext, transform->transform);
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_MapImmediate_close(mbgl_MapImmediate_t* map) {
+  if(map != 0) {
+    delete map->map;
+    map->map = 0;
+    free(map);
+  }
+  return 0;
 }

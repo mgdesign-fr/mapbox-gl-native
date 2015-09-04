@@ -216,6 +216,44 @@ void mbgl_Transform_setPitch(mbgl_Transform_t* transform, double pitch);
 MBGL_C_EXPORT
 double mbgl_Transform_getPitch(mbgl_Transform_t* transform);
 
+/*****************************************************************************/
+
+typedef struct mbgl_MapData_t mbgl_MapData_t;
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out);
+
+MBGL_C_EXPORT
+int mbgl_MapData_close(mbgl_MapData_t* mapData);
+
+/*****************************************************************************/
+
+typedef struct mbgl_MapContext_t mbgl_MapContext_t;
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapContext_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_MapData_t* mapData, mbgl_MapContext_t** out);
+
+MBGL_C_EXPORT
+int mbgl_MapContext_close(mbgl_MapContext_t* mapContext);
+
+/*****************************************************************************/
+
+typedef struct mbgl_MapImmediate_t mbgl_MapImmediate_t;
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapImmediate_init(mbgl_MapData_t* mapData, mbgl_MapContext_t* mapContext, mbgl_Transform_t* transform, mbgl_MapImmediate_t** out);
+
+MBGL_C_EXPORT
+int mbgl_MapImmediate_close(mbgl_MapImmediate_t* map);
+
+/*****************************************************************************/
+
 #ifdef __cplusplus
 }
 #endif
