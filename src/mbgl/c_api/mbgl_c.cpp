@@ -406,6 +406,11 @@ void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styl
   mapContext->mapContext->setStyleURL(std::string(styleUrl));
 }
 
+MBGL_C_EXPORT
+void mbgl_MapContext_triggerUpdate(mbgl_MapContext_t* mapContext,  mbgl_Transform_t* transform, int flags) {
+  mapContext->mapContext->triggerUpdate(transform->transform->getState(), (mbgl::Update)flags);
+}
+
 /*****************************************************************************/
 
 struct mbgl_MapThreadContext_t {

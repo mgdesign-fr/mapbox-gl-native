@@ -243,6 +243,9 @@ int mbgl_MapContext_close(mbgl_MapContext_t* mapContext);
 MBGL_C_EXPORT
 void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styleUrl);
 
+MBGL_C_EXPORT
+void mbgl_MapContext_triggerUpdate(mbgl_MapContext_t* mapContext, mbgl_Transform_t* transform, int flags);
+
 /*****************************************************************************/
 
 typedef struct mbgl_MapThreadContext_t mbgl_MapThreadContext_t;

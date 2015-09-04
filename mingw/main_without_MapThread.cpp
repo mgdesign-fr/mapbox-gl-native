@@ -305,7 +305,8 @@ int main(int argc, char *argv[]) {
         //transform.setLatLngZoom(mbgl::LatLng{latitude, longitude}, zoom, mbgl::CameraOptions());
         mbgl_Transform_setLatLngZoom(transform, latitude, longitude, zoom);
         
-        mapContext.triggerUpdate(transform.getState(), mbgl::Update::Zoom);
+        //mapContext.triggerUpdate(transform.getState(), mbgl::Update::Zoom);
+        mbgl_MapContext_triggerUpdate(mapContext, transform, (int)mbgl::Update::Zoom);
         
         //imMap.render(&view);
         mbgl_MapImmediate_render(imMap, (mbgl_View_t*)view_c);
@@ -314,7 +315,12 @@ int main(int argc, char *argv[]) {
         mbgl_MapImmediate_update(imMap);
     }
 
-    mapContext.cleanup();
+    // Cleanup
+    mbgl_MapImmediate_close(imMap);
+    mbgl_Transform_close(transform);
+    mbgl_MapContext_close(mapContext); // TODO or not? mapContext.cleanup();
+    mbgl_MapData_close(mapData);
+    mbgl_MapThreadContext_close(inMapThreadContext);
     
     glfwDestroyWindow(viewData.window);
     glfwTerminate();

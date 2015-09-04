@@ -300,6 +300,14 @@ mbgl_MapContext_setStyleURL = _dll.mbgl_MapContext_setStyleURL
 mbgl_MapContext_setStyleURL.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.c_char_p ]
 mbgl_MapContext_setStyleURL.restype = None
 
+# mbgl_MapContext_triggerUpdate
+#
+# SEE : void mbgl_MapContext_triggerUpdate(mbgl_MapContext_t* mapContext,  mbgl_Transform_t* transform, int flags);
+# 
+mbgl_MapContext_triggerUpdate = _dll.mbgl_MapContext_triggerUpdate
+mbgl_MapContext_triggerUpdate.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.POINTER(mbgl_Transform_t), ctypes.c_int ]
+mbgl_MapContext_triggerUpdate.restype = None
+
 
 # mbgl_MapThreadContext_t type
 # 
