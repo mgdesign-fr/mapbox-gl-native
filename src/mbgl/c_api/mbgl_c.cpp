@@ -369,7 +369,7 @@ int mbgl_Transform_close(mbgl_Transform_t* transform) {
 }
 
 MBGL_C_EXPORT
-bool mbgl_Transform_resize(mbgl_Transform_t* transform, uint16_t width, uint16_t height) {
+int mbgl_Transform_resize(mbgl_Transform_t* transform, uint16_t width, uint16_t height) {
   return transform->transform->resize({{ width, height }});
 }
 
