@@ -39,14 +39,14 @@ typedef struct mbgl_CApiView_t mbgl_CApiView_t;
 
 struct mbgl_CApiView_Callbacks_t
 {
-  float (*getPixelRatio)(mbgl_CApiView_t*, void*);
-  void (*getSize)(mbgl_CApiView_t*, void*, uint16_t*, uint16_t*);
-  void (*getFramebufferSize)(mbgl_CApiView_t*, void*, uint16_t*, uint16_t*);
-  void (*activate)(mbgl_CApiView_t*, void*);
-  void (*deactivate)(mbgl_CApiView_t*, void*);
-  void (*notify)(mbgl_CApiView_t*, void*);
-  void (*invalidate)(mbgl_CApiView_t*, void*);
-  void (*swap)(mbgl_CApiView_t*, void*);
+  float (*getPixelRatio)(mbgl_CApiView_t* view, void* userdata);
+  void (*getSize)(mbgl_CApiView_t* view, void* userdata, uint16_t* width, uint16_t* height);
+  void (*getFramebufferSize)(mbgl_CApiView_t* view, void* userdata, uint16_t* fbWidth, uint16_t* fbHeight);
+  void (*activate)(mbgl_CApiView_t* view, void* userdata);
+  void (*deactivate)(mbgl_CApiView_t* view, void* userdata);
+  void (*notify)(mbgl_CApiView_t* view, void* userdata);
+  void (*invalidate)(mbgl_CApiView_t* view, void* userdata);
+  void (*swap)(mbgl_CApiView_t* view, void* userdata);
 };
 
 MBGL_C_EXPORT
