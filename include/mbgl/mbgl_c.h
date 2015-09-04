@@ -82,6 +82,7 @@ void mbgl_GLFWView_report(mbgl_GLFWView_t* view, float duration);
 
 /*****************************************************************************/
 
+// TODO typedef mbgl_Cache_t mbgl_Cache_t;
 typedef struct mbgl_SQLiteCache_t mbgl_SQLiteCache_t;
 
 MBGL_C_EXPORT
@@ -92,8 +93,10 @@ int mbgl_SQLiteCache_close(mbgl_SQLiteCache_t* sqliteCache);
 
 /*****************************************************************************/
 
+// TODO typedef mbgl_FileSource_t mbgl_FileSource_t;
 typedef struct mbgl_DefaultFileSource_t mbgl_DefaultFileSource_t;
 
+// Replace mbgl_SQLiteCache_t with mbgl_Cache_t
 MBGL_C_EXPORT
 int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out);
 
@@ -110,6 +113,7 @@ const char* mbgl_DefaultFileSource_getAccessToken(mbgl_DefaultFileSource_t* file
 
 typedef struct mbgl_Map_t mbgl_Map_t;
 
+// Replace mbgl_DefaultFileSource_t with mbgl_FileSource_t
 MBGL_C_EXPORT
 int mbgl_Map_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out);
 
@@ -234,6 +238,7 @@ typedef struct mbgl_MapContext_t mbgl_MapContext_t;
 
 /*****************************************************************************/
 
+// Replace mbgl_DefaultFileSource_t with mbgl_FileSource_t
 MBGL_C_EXPORT
 int mbgl_MapContext_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_MapData_t* mapData, mbgl_MapContext_t** out);
 
