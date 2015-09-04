@@ -403,6 +403,37 @@ int mbgl_MapContext_close(mbgl_MapContext_t* mapContext) {
 
 /*****************************************************************************/
 
+struct mbgl_MapThreadContext_t {
+  mbgl::MapThreadContext* mapThreadContext;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapThreadContext_init(mbgl_MapThreadContext_t** out) {
+  mbgl_MapThreadContext_t* result = (mbgl_MapThreadContext_t*)malloc(sizeof(*result));
+  result->mapThreadContext = new mbgl::MapThreadContext();
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_MapThreadContext_close(mbgl_MapThreadContext_t* mapThreadContext) {
+  if(mapThreadContext != 0) {
+    delete mapThreadContext->mapThreadContext;
+    mapThreadContext->mapThreadContext = 0;
+    free(mapThreadContext);
+  }
+  return 0;
+}
+
+MBGL_C_EXPORT
+void mbgl_MapThreadContext_process(mbgl_MapThreadContext_t* mapThreadContext) {
+  mapThreadContext->mapThreadContext->process();
+}
+
+/*****************************************************************************/
+
 struct mbgl_MapImmediate_t {
   mbgl::MapImmediate* map;
 };

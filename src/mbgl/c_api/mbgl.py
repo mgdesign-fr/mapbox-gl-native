@@ -293,6 +293,36 @@ mbgl_MapContext_close.argtypes = [ ctypes.POINTER(mbgl_MapContext_t) ]
 mbgl_MapContext_close.restype = ctypes.c_int
 
 
+# mbgl_MapThreadContext_t type
+# 
+class mbgl_MapThreadContext_t(ctypes.Structure):
+  pass
+
+# mbgl_MapThreadContext_init
+#
+# SEE : int mbgl_MapThreadContext_init(mbgl_MapThreadContext_t** out);
+# 
+mbgl_MapThreadContext_init = _dll.mbgl_MapThreadContext_init
+mbgl_MapThreadContext_init.argtypes = [ ctypes.POINTER(ctypes.POINTER(mbgl_MapThreadContext_t)) ]
+mbgl_MapThreadContext_init.restype = ctypes.c_int
+
+# mbgl_MapThreadContext_close
+#
+# SEE : int mbgl_MapThreadContext_close(mbgl_MapThreadContext_t* mapThreadContext);
+# 
+mbgl_MapThreadContext_close = _dll.mbgl_MapThreadContext_close
+mbgl_MapThreadContext_close.argtypes = [ ctypes.POINTER(mbgl_MapThreadContext_t) ]
+mbgl_MapThreadContext_close.restype = ctypes.c_int
+
+# mbgl_MapThreadContext_process
+#
+# SEE : void mbgl_MapThreadContext_process(mbgl_MapThreadContext_t* mapThreadContext);
+# 
+mbgl_MapThreadContext_process = _dll.mbgl_MapThreadContext_process
+mbgl_MapThreadContext_process.argtypes = [ ctypes.POINTER(mbgl_MapThreadContext_t) ]
+mbgl_MapThreadContext_process.restype = None
+
+
 # mbgl_MapImmediate_t type
 # 
 class mbgl_MapImmediate_t(ctypes.Structure):

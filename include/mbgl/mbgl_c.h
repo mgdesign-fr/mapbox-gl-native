@@ -242,6 +242,21 @@ int mbgl_MapContext_close(mbgl_MapContext_t* mapContext);
 
 /*****************************************************************************/
 
+typedef struct mbgl_MapThreadContext_t mbgl_MapThreadContext_t;
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_MapThreadContext_init(mbgl_MapThreadContext_t** out);
+
+MBGL_C_EXPORT
+int mbgl_MapThreadContext_close(mbgl_MapThreadContext_t* mapThreadContext);
+
+MBGL_C_EXPORT
+void mbgl_MapThreadContext_process(mbgl_MapThreadContext_t* mapThreadContext);
+
+/*****************************************************************************/
+
 typedef struct mbgl_MapImmediate_t mbgl_MapImmediate_t;
 
 /*****************************************************************************/
