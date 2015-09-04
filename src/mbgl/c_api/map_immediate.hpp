@@ -5,6 +5,8 @@
 #include <mbgl/map/map_data.hpp>
 #include <mbgl/map/transform.hpp>
 
+namespace mbgl {
+
 struct MapImmediate {
 
     mbgl::MapData* mapData = nullptr;
@@ -18,6 +20,7 @@ struct MapImmediate {
     };
     RenderState renderState = RenderState::never;
 
+    // NOTE(nico) user should call 'resize' before any rendering or update can occur
     MapImmediate(mbgl::MapData* mapData_, mbgl::MapContext* mapContext_, mbgl::Transform* transform_) 
     : mapData(mapData_), mapContext(mapContext_), transform(transform_) {
         assert(mapData_);
@@ -69,6 +72,8 @@ struct MapThreadContext {
     mbgl::util::RunLoop runLoop;
     mbgl::util::MapThreadContextRegistrar fakeMapThread;
 
+    // Register the current 'RunLoop' used by MapContext
+    // and the current 'ThreadContext' as 'ThreadType::Map'
     MapThreadContext() : runLoop(uvLoop.get()) {
     }
 
@@ -77,10 +82,13 @@ struct MapThreadContext {
         uv_run(uvLoop.get(), UV_RUN_NOWAIT);
     }
 
+    // Process the events for MapContext
     void process() {
         assert(&runLoop == mbgl::util::RunLoop::Get());
         uv_run(uvLoop.get(), UV_RUN_NOWAIT);
     }
 };
+
+}
 
 #endif
