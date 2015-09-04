@@ -92,7 +92,7 @@ public:
 
 /*****************************************************************************/
 
-int mbgl_CApiView_init(mbgl_CApiView_t** out, mbgl_CApiView_Callbacks_t* callbacks, void* userdata) {
+int mbgl_CApiView_init(mbgl_CApiView_Callbacks_t* callbacks, void* userdata, mbgl_CApiView_t** out) {
   mbgl_CApiView_t* result = (mbgl_CApiView_t*)malloc(sizeof(*result));
   result->callbacks = callbacks;
   result->userdata = userdata;

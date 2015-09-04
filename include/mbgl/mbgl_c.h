@@ -50,7 +50,7 @@ struct mbgl_CApiView_Callbacks_t
 };
 
 MBGL_C_EXPORT
-int mbgl_CApiView_init(mbgl_CApiView_t** out, mbgl_CApiView_Callbacks_t* callbacks, void* userdata);
+int mbgl_CApiView_init(mbgl_CApiView_Callbacks_t* callbacks, void* userdata, mbgl_CApiView_t** out);
 
 MBGL_C_EXPORT
 int mbgl_CApiView_close(mbgl_CApiView_t* view);
