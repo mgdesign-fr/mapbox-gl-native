@@ -6,8 +6,91 @@
 
 /*****************************************************************************/
 
+struct mbgl_View_t {
+  mbgl::View* view;
+};
+
+/*****************************************************************************/
+
+class CApiView : public mbgl::View {
+public:
+  CApiView() {
+  }
+
+  ~CApiView() {
+  }
+
+  float getPixelRatio() const override {
+    // TODO cb
+    return 0.0f;
+  }
+  
+  std::array<uint16_t, 2> getSize() const override {
+    uint16_t width = 0;
+    uint16_t height = 0;
+    // TODO cb
+    return {{ width, height }};
+  }
+  
+  std::array<uint16_t, 2> getFramebufferSize() const override {
+    uint16_t fbWidth = 0;
+    uint16_t fbHeight = 0;
+    // TODO cb
+    return {{ fbWidth, fbHeight }};
+  }
+  
+  void activate() override {
+  }
+  
+  void deactivate() override {
+  }
+  
+  void notify() override {
+  }
+  
+  void invalidate() override {
+  }
+  
+  void swap() override {
+  }
+};
+
+/*****************************************************************************/
+
+struct mbgl_CApiView_t {
+  union {
+      mbgl_View_t base;
+      CApiView* view;
+  };
+  mbgl_CApiView_Callbacks_t callbacks;
+};
+
+/*****************************************************************************/
+
+int mbgl_CApiView_init(mbgl_CApiView_t** out, mbgl_CApiView_Callbacks_t* callbacks, void* userdata) {
+  mbgl_CApiView_t* result = (mbgl_CApiView_t*)malloc(sizeof(*result));
+	result->view = new CApiView();
+  result->callbacks = {0}; // TODO
+	*out = result;
+	return 0;
+}
+
+int mbgl_CApiView_close(mbgl_CApiView_t* view) {
+	if (view != 0) {
+		delete view->view;
+		view->view = 0;
+		free(view);
+	}
+	return 0;
+}
+
+/*****************************************************************************/
+
 struct mbgl_GLFWView_t {
-	GLFWView* view;
+	union {
+    mbgl_View_t base;
+    GLFWView* view;
+  };
 };
 
 /*****************************************************************************/
@@ -128,7 +211,7 @@ struct mbgl_Map_t {
 /*****************************************************************************/
 
 MBGL_C_EXPORT
-int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out) {
+int mbgl_Map_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out) {
 	mbgl_Map_t* result = (mbgl_Map_t*)malloc(sizeof(*result));
   result->map = new mbgl::Map(*view->view, *fileSource->fileSource);
   *out = result;

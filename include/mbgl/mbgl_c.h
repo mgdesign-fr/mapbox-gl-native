@@ -29,6 +29,32 @@ extern "C" {
 
 /*****************************************************************************/
 
+typedef struct mbgl_View_t mbgl_View_t;
+
+/*****************************************************************************/
+
+typedef struct mbgl_CApiView_t mbgl_CApiView_t;
+
+struct mbgl_CApiView_Callbacks_t
+{
+  float (*callbackGetPixelRatio)(mbgl_CApiView_t*, void*);
+  void (*callbackGetSize)(mbgl_CApiView_t*, void*);
+  void (*callbackGetFramebufferSize)(mbgl_CApiView_t*, void*);
+  void (*callbackActivate)(mbgl_CApiView_t*, void*);
+  void (*callbackDeactivate)(mbgl_CApiView_t*, void*);
+  void (*callbackNotify)(mbgl_CApiView_t*, void*);
+  void (*callbackInvalidate)(mbgl_CApiView_t*, void*);
+  void (*callbackSwap)(mbgl_CApiView_t*, void*);
+};
+
+MBGL_C_EXPORT
+int mbgl_CApiView_init(mbgl_CApiView_t** out, mbgl_CApiView_Callbacks_t* callbacks, void* userdata);
+
+MBGL_C_EXPORT
+int mbgl_CApiView_close(mbgl_CApiView_t* view);
+
+/*****************************************************************************/
+
 typedef struct mbgl_GLFWView_t mbgl_GLFWView_t;
 
 MBGL_C_EXPORT
@@ -83,7 +109,7 @@ const char* mbgl_DefaultFileSource_getAccessToken(mbgl_DefaultFileSource_t* file
 typedef struct mbgl_Map_t mbgl_Map_t;
 
 MBGL_C_EXPORT
-int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out);
+int mbgl_Map_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out);
 
 MBGL_C_EXPORT
 int mbgl_Map_close(mbgl_Map_t* map);
