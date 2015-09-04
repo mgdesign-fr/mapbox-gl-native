@@ -14,6 +14,9 @@ std::vector<ExtensionFunctionBase*>& ExtensionFunctionBase::functions() {
 static std::once_flag initializeExtensionsOnce;
 
 void InitializeExtensions(glProc (*getProcAddress)(const char *)) {
+#ifdef _WIN32
+    glewInit();
+#endif
     std::call_once(initializeExtensionsOnce, [getProcAddress] {
         const char * extensionsPtr = reinterpret_cast<const char *>(
             MBGL_CHECK_ERROR(glGetString(GL_EXTENSIONS)));

@@ -63,7 +63,6 @@ void HeadlessView::loadExtensions() {
 #endif
 
 #ifdef MBGL_USE_GLFW_WIN32
-    glewInit();
     gl::InitializeExtensions(glfwGetProcAddress);
 #endif
 

@@ -75,9 +75,6 @@ GLFWView::GLFWView(bool fullscreen_, bool benchmark_)
     glfwSetScrollCallback(window, onScroll);
     glfwSetKeyCallback(window, onKey);
 
-#ifdef __MINGW32__
-    glewInit();
-#endif
     mbgl::gl::InitializeExtensions(glfwGetProcAddress);
 
     glfwGetWindowSize(window, &width, &height);
