@@ -258,6 +258,11 @@ mbgl_Transform_getPitch.restype = ctypes.c_double
 class mbgl_MapData_t(ctypes.Structure):
   pass
 
+# Used for mbgl_MapData_init
+#
+mbgl_MapData_Mode_Continuous = 0
+mbgl_MapData_Mode_Still      = 1
+
 # mbgl_MapData_init
 #
 # SEE : int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out);
@@ -279,7 +284,7 @@ mbgl_MapData_close.restype = ctypes.c_int
 # 
 class mbgl_MapContext_t(ctypes.Structure):
   pass
-
+  
 # mbgl_MapContext_init
 #
 # SEE : int mbgl_MapContext_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_MapData_t* mapData, mbgl_MapContext_t** out);
@@ -303,6 +308,16 @@ mbgl_MapContext_close.restype = ctypes.c_int
 mbgl_MapContext_setStyleURL = _dll.mbgl_MapContext_setStyleURL
 mbgl_MapContext_setStyleURL.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.c_char_p ]
 mbgl_MapContext_setStyleURL.restype = None
+
+# Used for mbgl_MapContext_triggerUpdate
+#
+mbgl_MapContext_Update_Nothing           = 0
+mbgl_MapContext_Update_Dimensions        = 1 << 1
+mbgl_MapContext_Update_DefaultTransition = 1 << 2
+mbgl_MapContext_Update_Classes           = 1 << 3
+mbgl_MapContext_Update_Zoom              = 1 << 4
+mbgl_MapContext_Update_RenderStill       = 1 << 5
+mbgl_MapContext_Update_Repaint           = 1 << 6
 
 # mbgl_MapContext_triggerUpdate
 #
