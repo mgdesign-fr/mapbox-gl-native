@@ -19,6 +19,73 @@
 #include <cstdlib>
 #include <cstdio>
 
+/*****************************************************************************/
+
+struct MapImmediate {
+
+    mbgl::MapData* mapData = nullptr;
+    mbgl::MapContext* mapContext = nullptr;
+    mbgl::Transform* transform = nullptr;
+
+    enum class RenderState {
+        never,
+        partial,
+        fully
+    };
+    RenderState renderState = RenderState::never;
+
+    MapImmediate(mbgl::MapData* mapData_, mbgl::MapContext* mapContext_, mbgl::Transform* transform_) 
+    : mapData(mapData_), mapContext(mapContext_), transform(transform_) {
+        assert(mapData_);
+        assert(mapContext_);
+        assert(transform_);
+    }
+
+    void render(mbgl::View* view) {
+        if (renderState == RenderState::never) {
+            view->notifyMapChange(mbgl::MapChangeWillStartRenderingMap);
+        }
+
+        view->notifyMapChange(mbgl::MapChangeWillStartRenderingFrame);
+
+        const bool fullyLoaded = mapContext->renderSync(transform->getState(), mbgl::FrameData { view->getFramebufferSize() });
+
+        view->notifyMapChange(fullyLoaded ?
+            mbgl::MapChangeDidFinishRenderingFrameFullyRendered :
+            mbgl::MapChangeDidFinishRenderingFrame);
+
+        if (!fullyLoaded) {
+            renderState = RenderState::partial;
+        } else if (renderState != RenderState::fully) {
+            renderState = RenderState::fully;
+            view->notifyMapChange(mbgl::MapChangeDidFinishRenderingMapFullyRendered);
+        }
+    }
+
+};
+
+struct MapThreadContext {
+
+    uv::loop uvLoop;
+    mbgl::util::RunLoop runLoop;
+    mbgl::util::MapThreadContextRegistrar fakeMapThread;
+
+    MapThreadContext() : runLoop(uvLoop.get()) {
+    }
+
+    ~MapThreadContext() {
+        // make sure not to lose events
+        uv_run(uvLoop.get(), UV_RUN_NOWAIT);
+    }
+
+    void process() {
+        assert(&runLoop == mbgl::util::RunLoop::Get());
+        uv_run(uvLoop.get(), UV_RUN_NOWAIT);
+    }
+};
+
+/*****************************************************************************/
+
 namespace {
 
 std::unique_ptr<GLFWView> view;
@@ -112,24 +179,18 @@ int main(int argc, char *argv[]) {
 
     //mbgl::Map map(*view, fileSource);
 
-    enum class RenderState {
-        never,
-        partial,
-        fully
-    };
+    MapThreadContext imMapThreadContext;
 
-    RenderState renderState = RenderState::never;
-
-    uv::loop l;
-    mbgl::util::RunLoop loop(l.get());
-
-    mbgl::util::MapThreadContextRegistrar fakeMapThread;
     mbgl::MapData mapData(mbgl::MapMode::Continuous, 1.0f);
     mbgl::MapContext mapContext(*view, fileSource, mapData);
     mbgl::Transform transform(*view);
 
+    MapImmediate imMap(&mapData, &mapContext, &transform);
+
+    //printf("yo!\n");
+
     transform.resize(view->getSize());
-    mapContext.triggerUpdate(transform.getState(), mbgl::Update::Dimensions);
+    //mapContext.triggerUpdate(transform.getState(), mbgl::Update::Dimensions);
 
     //mapData.setDebug(true);
     /*
@@ -177,7 +238,7 @@ int main(int argc, char *argv[]) {
         
         //glfwWaitEvents();
         glfwPollEvents();
-        uv_run(l.get(), UV_RUN_NOWAIT);
+        imMapThreadContext.process();
 
         const bool dirty = true; //!view->clean.test_and_set();
 
@@ -189,24 +250,7 @@ int main(int argc, char *argv[]) {
             const double started = glfwGetTime();
             
             //map->renderSync();
-            if (renderState == RenderState::never) {
-                view->notifyMapChange(mbgl::MapChangeWillStartRenderingMap);
-            }
-
-            view->notifyMapChange(mbgl::MapChangeWillStartRenderingFrame);
-
-            const bool fullyLoaded = mapContext.renderSync(transform.getState(), mbgl::FrameData { view->getFramebufferSize() });
-
-            view->notifyMapChange(fullyLoaded ?
-                mbgl::MapChangeDidFinishRenderingFrameFullyRendered :
-                mbgl::MapChangeDidFinishRenderingFrame);
-
-            if (!fullyLoaded) {
-                renderState = RenderState::partial;
-            } else if (renderState != RenderState::fully) {
-                renderState = RenderState::fully;
-                view->notifyMapChange(mbgl::MapChangeDidFinishRenderingMapFullyRendered);
-            }
+            imMap.render(view.get());
 
             //TODO//report(1000 * (glfwGetTime() - started));
 
