@@ -12,7 +12,6 @@ struct mbgl_View_t {
   mbgl::View* view;
 };
 
-
 /*****************************************************************************/
 
 // Pre-declaration
@@ -30,10 +29,10 @@ struct mbgl_CApiView_t {
 /*****************************************************************************/
 
 class CApiView : public mbgl::View {
-public:
-
+private:
   mbgl_CApiView_t* opaqueView;
 
+public:
   explicit CApiView(mbgl_CApiView_t* _opaqueView) : opaqueView(_opaqueView) {
     assert(opaqueView != 0);
   }
