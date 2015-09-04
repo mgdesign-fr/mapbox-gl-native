@@ -82,7 +82,7 @@ private:
     double lastClick = -1;
 
     std::function<void()> changeStyleCallback;
-
+public:
     GLFWwindow *window = nullptr;
     std::atomic_flag clean = ATOMIC_FLAG_INIT;
 };

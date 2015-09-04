@@ -6,6 +6,7 @@ import sys
 UNIT_TESTS=None
 
 c_api_only = "--c_api_only" in sys.argv
+win_app_only = "--winapp_only" in sys.argv
 
 if not c_api_only and "--test" in sys.argv:
   UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc", "storage.cpp"]
@@ -17,9 +18,9 @@ if not c_api_only and "--test" in sys.argv:
   UNIT_TESTS += ["cache_response.cpp", "cache_revalidate.cpp", "database.cpp", "directory_reading.cpp", "file_reading.cpp", "http_cancel.cpp", "http_coalescing.cpp", "http_error.cpp", "http_header_parsing.cpp", "http_issue_1369.cpp", "http_load.cpp", "http_other_loop.cpp", "http_reading.cpp"]
   UNIT_TESTS += ["glyph_store.cpp", "pending_resources.cpp", "resources_loading.cpp", "sprite.cpp"]
 
-BUILD_RENDER_EXE = UNIT_TESTS is None and not c_api_only
-BUILD_WINAPP_EXE = UNIT_TESTS is None
-LINK_MAPBOX_GL_DLL = UNIT_TESTS is None
+BUILD_RENDER_EXE = UNIT_TESTS is None and not c_api_only and not win_app_only
+BUILD_WINAPP_EXE = UNIT_TESTS is None or win_app_only
+LINK_MAPBOX_GL_DLL = UNIT_TESTS is None and not win_app_only
 
 RELEASE_FLAGS = ["-DNDEBUG", "-O3"]   # -g ?
 DEBUG_FLAGS = ["-DDEBUG", "-Og", "-g"]
@@ -104,7 +105,8 @@ for src_folder in src_folders:
       clang_cmd += ["-pthread"]                                                                             # NOTE(nico) - otherwise linking fails
       clang_cmd += ["-D_USE_MATH_DEFINES"]                                                                  # NOTE(nico) - to define M_PI
       clang_cmd += ["-DMBGL_C_EXPORTS"]
-      #clang_cmd += ["-DCURL_STATICLIB", "-DZIP_EXTERN="]                                                    # NOTE(nico) - for static linking
+      #clang_cmd += ["-DCURL_STATICLIB", "-ZIP_EXTERN="]                                                    # NOTE(nico) - for static linking
+      clang_cmd += ["-DNU_BUILD_STATIC="]                                                                   # NOTE(nico) - to prevent `nunicode` to export its symbols...?
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
@@ -128,8 +130,10 @@ assert len(OBJs) == len(set(OBJs))
 if LINK_MAPBOX_GL_DLL:
   clang_cmd = [ "g++", "-shared", "-pthread" ]
   clang_cmd += CPP_FLAGS
-  #clang_cmd += [ "-static" ]
-  if not c_api_only:
+  if c_api_only:
+    #clang_cmd += [ "-static" ]
+    pass
+  else:
     clang_cmd += [ "-Wl,--export-all-symbols" ]                                                               # NOTE(nico) - should be 'hidden' but...
   clang_cmd += [ "-Wl,--out-implib=libmapbox-gl.dll.a" ]
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
@@ -177,7 +181,7 @@ if BUILD_RENDER_EXE:
 if BUILD_WINAPP_EXE:
   clang_cmd = [ "g++", "-pthread" ]
   clang_cmd += CPP_FLAGS
-  clang_cmd += [ "mingw\\main.cpp" ]
+  clang_cmd += [ "mingw\\main_without_MapThread.cpp" ]
   clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
