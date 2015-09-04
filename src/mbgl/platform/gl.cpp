@@ -1,4 +1,5 @@
 #include <mbgl/platform/gl.hpp>
+#include <mbgl/platform/log.hpp>
 #include <mbgl/util/string.hpp>
 
 #include <mutex>
@@ -15,7 +16,11 @@ static std::once_flag initializeExtensionsOnce;
 
 void InitializeExtensions(glProc (*getProcAddress)(const char *)) {
 #ifdef _WIN32
-    glewInit();
+    int err = glewInit();
+    if (GLEW_OK != err)
+    {
+      mbgl::Log::Error(mbgl::Event::OpenGL, "glewInit error: %s\n", glewGetErrorString(err));
+    }
 #endif
     std::call_once(initializeExtensionsOnce, [getProcAddress] {
         const char * extensionsPtr = reinterpret_cast<const char *>(

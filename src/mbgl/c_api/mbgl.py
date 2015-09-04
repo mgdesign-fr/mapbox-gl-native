@@ -24,7 +24,7 @@ def _loadDLL():
   # Find dll in sys.path, prefer debug dll if one exists.
   #
   if platform.system() == "Windows":
-    MODULE_NAMES = [ "mbgl.dll" ]
+    MODULE_NAMES = [ "libmapbox-gl.dll" ]
   
   # Add current path to sys.path (for release)
   #
@@ -416,3 +416,9 @@ mbgl_MapImmediate_resize.restype = None
 mbgl_MapImmediate_update = _dll.mbgl_MapImmediate_update
 mbgl_MapImmediate_update.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t) ]
 mbgl_MapImmediate_update.restype = None
+
+# mbgl_gl_initializeExtensions
+#
+mbgl_gl_initializeExtensions = _dll.mbgl_gl_initializeExtensions
+mbgl_gl_initializeExtensions.argtypes = []
+mbgl_gl_initializeExtensions.restype = ctypes.c_int

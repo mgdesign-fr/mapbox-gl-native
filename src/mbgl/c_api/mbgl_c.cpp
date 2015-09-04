@@ -493,3 +493,19 @@ MBGL_C_EXPORT
 void mbgl_MapImmediate_update(mbgl_MapImmediate_t* map) {
   map->map->update();
 }
+
+/*****************************************************************************/
+
+#include <mbgl/platform/gl.hpp>
+
+typedef void (*glProc)();
+static glProc myGetProcAddress(const char* name) {
+  // NOTE(nico) to get rid of __stdcall convention
+  return (glProc)wglGetProcAddress(name);
+}
+
+MBGL_C_EXPORT
+int mbgl_gl_initializeExtensions() {
+  // TODO(nico) should allow user to pass his function pointer for getProcAddress ?
+  mbgl::gl::InitializeExtensions(myGetProcAddress);  
+}

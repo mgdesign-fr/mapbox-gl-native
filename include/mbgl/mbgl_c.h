@@ -295,6 +295,11 @@ void mbgl_MapImmediate_update(mbgl_MapImmediate_t* map);
 
 /*****************************************************************************/
 
+MBGL_C_EXPORT
+int mbgl_gl_initializeExtensions();
+
+/*****************************************************************************/
+
 #ifdef __cplusplus
 }
 #endif
