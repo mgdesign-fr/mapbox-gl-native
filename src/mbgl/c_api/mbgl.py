@@ -44,6 +44,10 @@ def _loadDLL():
 
 _dll = _loadDLL()
 
+# mbgl_View_t type
+# 
+class mbgl_View_t(ctypes.Structure):
+  pass
 
 # mbgl_CApiView_t type
 # 
