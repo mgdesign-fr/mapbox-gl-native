@@ -1,5 +1,6 @@
 #include <mbgl/mbgl_c.h>
 #include <mbgl/mbgl.hpp>
+#include <mbgl/map/transform.hpp>
 #include <mbgl/platform/default/glfw_view.hpp>
 #include <mbgl/storage/default_file_source.hpp>
 #include <mbgl/storage/sqlite_cache.hpp>
@@ -339,4 +340,91 @@ int mbgl_Map_getCollisionDebug(mbgl_Map_t* map) {
 MBGL_C_EXPORT
 int mbgl_Map_isFullyLoaded(mbgl_Map_t* map) {
   return map->map->isFullyLoaded();
+}
+
+/*****************************************************************************/
+
+struct mbgl_Transform_t {
+  mbgl::Transform* transform;
+};
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+int mbgl_Transform_init(mbgl_View_t* view, mbgl_Transform_t** out) {
+  mbgl_Transform_t* result = (mbgl_Transform_t*)malloc(sizeof(*result));
+  result->transform = new mbgl::Transform(*view->view);
+  *out = result;
+  return 0;
+}
+
+MBGL_C_EXPORT
+int mbgl_Transform_close(mbgl_Transform_t* transform) {
+  if(transform != 0) {
+    delete transform->transform;
+    transform->transform = 0;
+    free(transform);
+  }
+  return 0;
+}
+
+MBGL_C_EXPORT
+bool mbgl_Transform_resize(mbgl_Transform_t* transform, uint16_t width, uint16_t height) {
+  return transform->transform->resize({{ width, height }});
+}
+
+// Position
+MBGL_C_EXPORT
+void mbgl_Transform_setLatLng(mbgl_Transform_t* transform, double latitude, double longitude) {
+  mbgl::CameraOptions defaultCameraOptions;
+  transform->transform->setLatLng(mbgl::LatLng(latitude,longitude), defaultCameraOptions);
+}
+
+MBGL_C_EXPORT
+void mbgl_Transform_getLatLng(mbgl_Transform_t* transform, double* outLatitude, double* outLongitude) {
+  mbgl::LatLng latLng = transform->transform->getLatLng();
+  *outLatitude = latLng.latitude;
+  *outLongitude = latLng.longitude;
+}
+
+// Zoom
+MBGL_C_EXPORT
+void mbgl_Transform_setZoom(mbgl_Transform_t* transform, double zoom) {
+  transform->transform->setZoom(zoom);
+}
+
+MBGL_C_EXPORT
+double mbgl_Transform_getZoom(mbgl_Transform_t* transform) {
+  return transform->transform->getZoom();
+}
+
+// Position + zoom
+MBGL_C_EXPORT
+void mbgl_Transform_setLatLngZoom(mbgl_Transform_t* transform, double latitude, double longitude, double zoom) {
+  mbgl::CameraOptions defaultCameraOptions;
+  transform->transform->setLatLngZoom(mbgl::LatLng(latitude,longitude), zoom, defaultCameraOptions);
+}
+
+// Angle
+MBGL_C_EXPORT
+void mbgl_Transform_setAngle(mbgl_Transform_t* transform, double angle) {
+  mbgl::CameraOptions defaultCameraOptions;
+  transform->transform->setAngle(angle, defaultCameraOptions);
+}
+
+MBGL_C_EXPORT
+double mbgl_Transform_getAngle(mbgl_Transform_t* transform) {
+  return transform->transform->getAngle();
+}
+
+// Pitch
+MBGL_C_EXPORT
+void mbgl_Transform_setPitch(mbgl_Transform_t* transform, double pitch) {
+  mbgl::CameraOptions defaultCameraOptions;
+  transform->transform->setPitch(pitch, defaultCameraOptions);
+}
+
+MBGL_C_EXPORT
+double mbgl_Transform_getPitch(mbgl_Transform_t* transform) {
+  return transform->transform->getPitch();
 }

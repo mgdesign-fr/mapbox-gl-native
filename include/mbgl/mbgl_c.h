@@ -177,6 +177,49 @@ int mbgl_Map_isFullyLoaded(mbgl_Map_t* map);
 
 /*****************************************************************************/
 
+typedef struct mbgl_Transform_t mbgl_Transform_t;
+
+MBGL_C_EXPORT
+int mbgl_Transform_init(mbgl_View_t* view, mbgl_Transform_t** out);
+
+MBGL_C_EXPORT
+int mbgl_Transform_close(mbgl_Transform_t* transform);
+
+MBGL_C_EXPORT
+bool mbgl_Transform_resize(mbgl_Transform_t* transform, uint16_t width, uint16_t height);
+
+// Position
+MBGL_C_EXPORT
+void mbgl_Transform_setLatLng(mbgl_Transform_t* transform, double latitude, double longitude);
+
+MBGL_C_EXPORT
+void mbgl_Transform_getLatLng(mbgl_Transform_t* transform, double* outLatitude, double* outLongitude);
+
+// Zoom
+MBGL_C_EXPORT
+void mbgl_Transform_setZoom(mbgl_Transform_t* transform, double zoom);
+
+MBGL_C_EXPORT
+double mbgl_Transform_getZoom(mbgl_Transform_t* transform);
+
+// Position + zoom
+MBGL_C_EXPORT
+void mbgl_Transform_setLatLngZoom(mbgl_Transform_t* transform, double latitude, double longitude, double zoom);
+
+// Angle
+MBGL_C_EXPORT
+void mbgl_Transform_setAngle(mbgl_Transform_t* transform, double angle);
+
+MBGL_C_EXPORT
+double mbgl_Transform_getAngle(mbgl_Transform_t* transform);
+
+// Pitch
+MBGL_C_EXPORT
+void mbgl_Transform_setPitch(mbgl_Transform_t* transform, double pitch);
+
+MBGL_C_EXPORT
+double mbgl_Transform_getPitch(mbgl_Transform_t* transform);
+
 #ifdef __cplusplus
 }
 #endif
