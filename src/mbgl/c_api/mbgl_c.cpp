@@ -4,73 +4,99 @@
 #include <mbgl/storage/default_file_source.hpp>
 #include <mbgl/storage/sqlite_cache.hpp>
 
+#include <cassert>
+
 /*****************************************************************************/
 
 struct mbgl_View_t {
   mbgl::View* view;
 };
 
-/*****************************************************************************/
-
-class CApiView : public mbgl::View {
-public:
-  CApiView() {
-  }
-
-  ~CApiView() {
-  }
-
-  float getPixelRatio() const override {
-    // TODO cb
-    return 0.0f;
-  }
-  
-  std::array<uint16_t, 2> getSize() const override {
-    uint16_t width = 0;
-    uint16_t height = 0;
-    // TODO cb
-    return {{ width, height }};
-  }
-  
-  std::array<uint16_t, 2> getFramebufferSize() const override {
-    uint16_t fbWidth = 0;
-    uint16_t fbHeight = 0;
-    // TODO cb
-    return {{ fbWidth, fbHeight }};
-  }
-  
-  void activate() override {
-  }
-  
-  void deactivate() override {
-  }
-  
-  void notify() override {
-  }
-  
-  void invalidate() override {
-  }
-  
-  void swap() override {
-  }
-};
 
 /*****************************************************************************/
+
+// Pre-declaration
+class CApiView;
 
 struct mbgl_CApiView_t {
   union {
       mbgl_View_t base;
       CApiView* view;
   };
-  mbgl_CApiView_Callbacks_t callbacks;
+  mbgl_CApiView_Callbacks_t* callbacks;
+  void* userdata;
+};
+
+/*****************************************************************************/
+
+class CApiView : public mbgl::View {
+public:
+
+  mbgl_CApiView_t* opaqueView;
+
+  explicit CApiView(mbgl_CApiView_t* _opaqueView) : opaqueView(_opaqueView) {
+    assert(opaqueView != 0);
+  }
+
+  ~CApiView() {
+  }
+
+  float getPixelRatio() const override {
+    if(opaqueView->callbacks->getPixelRatio != 0)
+      return opaqueView->callbacks->getPixelRatio(opaqueView, opaqueView->userdata);
+    else
+      return 1.0f;
+  }
+  
+  std::array<uint16_t, 2> getSize() const override {
+    uint16_t width = 0;
+    uint16_t height = 0;
+    if(opaqueView->callbacks->getSize != 0)
+      opaqueView->callbacks->getSize(opaqueView, opaqueView->userdata, &width, &height);
+    return {{ width, height }};
+  }
+  
+  std::array<uint16_t, 2> getFramebufferSize() const override {
+    uint16_t fbWidth = 0;
+    uint16_t fbHeight = 0;
+    if(opaqueView->callbacks->getFramebufferSize != 0)
+      opaqueView->callbacks->getFramebufferSize(opaqueView, opaqueView->userdata, &fbWidth, &fbHeight);
+    return {{ fbWidth, fbHeight }};
+  }
+  
+  void activate() override {
+    if(opaqueView->callbacks->activate != 0)
+      opaqueView->callbacks->activate(opaqueView, opaqueView->userdata);
+  }
+  
+  void deactivate() override {
+    if(opaqueView->callbacks->deactivate != 0)
+      opaqueView->callbacks->deactivate(opaqueView, opaqueView->userdata);
+  }
+  
+  void notify() override {
+    if(opaqueView->callbacks->notify != 0)
+      opaqueView->callbacks->notify(opaqueView, opaqueView->userdata);
+  }
+  
+  void invalidate() override {
+    if(opaqueView->callbacks->invalidate != 0)
+      opaqueView->callbacks->invalidate(opaqueView, opaqueView->userdata);
+  }
+  
+  void swap() override {
+    if(opaqueView->callbacks->swap != 0)
+      opaqueView->callbacks->swap(opaqueView, opaqueView->userdata);
+  }
 };
 
 /*****************************************************************************/
 
 int mbgl_CApiView_init(mbgl_CApiView_t** out, mbgl_CApiView_Callbacks_t* callbacks, void* userdata) {
   mbgl_CApiView_t* result = (mbgl_CApiView_t*)malloc(sizeof(*result));
-	result->view = new CApiView();
-  result->callbacks = {0}; // TODO
+  result->callbacks = callbacks;
+  result->userdata = userdata;
+	result->view = new CApiView(result);
 	*out = result;
 	return 0;
 }
@@ -80,6 +106,9 @@ int mbgl_CApiView_close(mbgl_CApiView_t* view) {
 		delete view->view;
 		view->view = 0;
 		free(view);
+    
+    view->callbacks = {0};
+    view->userdata = 0;
 	}
 	return 0;
 }
