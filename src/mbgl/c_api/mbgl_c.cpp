@@ -401,6 +401,11 @@ int mbgl_MapContext_close(mbgl_MapContext_t* mapContext) {
   return 0;
 }
 
+MBGL_C_EXPORT
+void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styleUrl) {
+  mapContext->mapContext->setStyleURL(std::string(styleUrl));
+}
+
 /*****************************************************************************/
 
 struct mbgl_MapThreadContext_t {
@@ -456,4 +461,19 @@ int mbgl_MapImmediate_close(mbgl_MapImmediate_t* map) {
     free(map);
   }
   return 0;
+}
+
+MBGL_C_EXPORT
+void mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view) {
+  map->map->render(view->view);
+}
+
+MBGL_C_EXPORT
+void mbgl_MapImmediate_resize(mbgl_MapImmediate_t* map, mbgl_View_t* view) {
+  map->map->resize(view->view);
+}
+
+MBGL_C_EXPORT
+void mbgl_MapImmediate_update(mbgl_MapImmediate_t* map) {
+  map->map->update();
 }

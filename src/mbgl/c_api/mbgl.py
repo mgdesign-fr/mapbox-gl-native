@@ -292,6 +292,14 @@ mbgl_MapContext_close = _dll.mbgl_MapContext_close
 mbgl_MapContext_close.argtypes = [ ctypes.POINTER(mbgl_MapContext_t) ]
 mbgl_MapContext_close.restype = ctypes.c_int
 
+# mbgl_MapContext_setStyleURL
+#
+# SEE : void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styleUrl);
+# 
+mbgl_MapContext_setStyleURL = _dll.mbgl_MapContext_setStyleURL
+mbgl_MapContext_setStyleURL.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.c_char_p ]
+mbgl_MapContext_setStyleURL.restype = None
+
 
 # mbgl_MapThreadContext_t type
 # 
@@ -343,3 +351,27 @@ mbgl_MapImmediate_init.restype = ctypes.c_int
 mbgl_MapImmediate_close = _dll.mbgl_MapImmediate_close
 mbgl_MapImmediate_close.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t) ]
 mbgl_MapImmediate_close.restype = ctypes.c_int
+
+# mbgl_MapImmediate_render
+#
+# SEE : void mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view);
+# 
+mbgl_MapImmediate_render = _dll.mbgl_MapImmediate_render
+mbgl_MapImmediate_render.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t), ctypes.POINTER(mbgl_View_t) ]
+mbgl_MapImmediate_render.restype = None
+
+# mbgl_MapImmediate_resize
+#
+# SEE : void mbgl_MapImmediate_resize(mbgl_MapImmediate_t* map, mbgl_View_t* view);
+# 
+mbgl_MapImmediate_resize = _dll.mbgl_MapImmediate_resize
+mbgl_MapImmediate_resize.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t), ctypes.POINTER(mbgl_View_t) ]
+mbgl_MapImmediate_resize.restype = None
+
+# mbgl_MapImmediate_update
+#
+# SEE : void mbgl_MapImmediate_update(mbgl_MapImmediate_t* map);
+# 
+mbgl_MapImmediate_update = _dll.mbgl_MapImmediate_update
+mbgl_MapImmediate_update.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t) ]
+mbgl_MapImmediate_update.restype = None

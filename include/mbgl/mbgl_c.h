@@ -240,6 +240,9 @@ int mbgl_MapContext_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource
 MBGL_C_EXPORT
 int mbgl_MapContext_close(mbgl_MapContext_t* mapContext);
 
+MBGL_C_EXPORT
+void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styleUrl);
+
 /*****************************************************************************/
 
 typedef struct mbgl_MapThreadContext_t mbgl_MapThreadContext_t;
@@ -266,6 +269,15 @@ int mbgl_MapImmediate_init(mbgl_MapData_t* mapData, mbgl_MapContext_t* mapContex
 
 MBGL_C_EXPORT
 int mbgl_MapImmediate_close(mbgl_MapImmediate_t* map);
+
+MBGL_C_EXPORT
+void mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view);
+
+MBGL_C_EXPORT
+void mbgl_MapImmediate_resize(mbgl_MapImmediate_t* map, mbgl_View_t* view);
+
+MBGL_C_EXPORT
+void mbgl_MapImmediate_update(mbgl_MapImmediate_t* map);
 
 /*****************************************************************************/
 
