@@ -2,30 +2,58 @@
 #define MBGL_MAIN_C_H
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-	#ifdef MBGL_C_EXPORTS
-		#ifdef __GNUC__
-		#define MBGL_C_EXPORT __attribute__ ((dllexport))
-		#else
-		#define MBGL_C_EXPORT __declspec(dllexport)
-		#endif
-	#else
-		#ifdef __GNUC__
-		#define MBGL_C_EXPORT __attribute__ ((dllimport))
-		#else
-		#define MBGL_C_EXPORT __declspec(dllimport)
-		#endif
-	#endif
+  #ifdef MBGL_C_EXPORTS
+    #ifdef __GNUC__
+    #define MBGL_C_EXPORT __attribute__ ((dllexport))
+    #else
+    #define MBGL_C_EXPORT __declspec(dllexport)
+    #endif
+  #else
+    #ifdef __GNUC__
+    #define MBGL_C_EXPORT __attribute__ ((dllimport))
+    #else
+    #define MBGL_C_EXPORT __declspec(dllimport)
+    #endif
+  #endif
 #else
-	#if __GNUC__ >= 4
-		#define MBGL_C_EXPORT __attribute__ ((visibility ("default")))
-		#else
-		#define MBGL_C_EXPORT
-	#endif
+  #if __GNUC__ >= 4
+    #define MBGL_C_EXPORT __attribute__ ((visibility ("default")))
+    #else
+    #define MBGL_C_EXPORT
+  #endif
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <cstdint>
+
+/*****************************************************************************/
+
+typedef struct mbgl_View_t mbgl_View_t;
+
+/*****************************************************************************/
+
+typedef struct mbgl_CApiView_t mbgl_CApiView_t;
+
+struct mbgl_CApiView_Callbacks_t
+{
+  float (*getPixelRatio)(mbgl_CApiView_t*, void*);
+  void (*getSize)(mbgl_CApiView_t*, void*, uint16_t*, uint16_t*);
+  void (*getFramebufferSize)(mbgl_CApiView_t*, void*, uint16_t*, uint16_t*);
+  void (*activate)(mbgl_CApiView_t*, void*);
+  void (*deactivate)(mbgl_CApiView_t*, void*);
+  void (*notify)(mbgl_CApiView_t*, void*);
+  void (*invalidate)(mbgl_CApiView_t*, void*);
+  void (*swap)(mbgl_CApiView_t*, void*);
+};
+
+MBGL_C_EXPORT
+int mbgl_CApiView_init(mbgl_CApiView_Callbacks_t* callbacks, void* userdata, mbgl_CApiView_t** out);
+
+MBGL_C_EXPORT
+int mbgl_CApiView_close(mbgl_CApiView_t* view);
 
 /*****************************************************************************/
 
@@ -83,7 +111,7 @@ const char* mbgl_DefaultFileSource_getAccessToken(mbgl_DefaultFileSource_t* file
 typedef struct mbgl_Map_t mbgl_Map_t;
 
 MBGL_C_EXPORT
-int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out);
+int mbgl_Map_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out);
 
 MBGL_C_EXPORT
 int mbgl_Map_close(mbgl_Map_t* map);

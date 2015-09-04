@@ -4,57 +4,168 @@
 #include <mbgl/storage/default_file_source.hpp>
 #include <mbgl/storage/sqlite_cache.hpp>
 
+#include <cassert>
+
+/*****************************************************************************/
+
+struct mbgl_View_t {
+  mbgl::View* view;
+};
+
+/*****************************************************************************/
+
+// Pre-declaration
+class CApiView;
+
+struct mbgl_CApiView_t {
+  union {
+      mbgl_View_t base;
+      CApiView* view;
+  };
+  mbgl_CApiView_Callbacks_t* callbacks;
+  void* userdata;
+};
+
+/*****************************************************************************/
+
+class CApiView : public mbgl::View {
+private:
+  mbgl_CApiView_t* opaqueView;
+
+public:
+  explicit CApiView(mbgl_CApiView_t* _opaqueView) : opaqueView(_opaqueView) {
+    assert(opaqueView != 0);
+  }
+
+  ~CApiView() {
+  }
+
+  float getPixelRatio() const override {
+    if(opaqueView->callbacks->getPixelRatio != 0)
+      return opaqueView->callbacks->getPixelRatio(opaqueView, opaqueView->userdata);
+    else
+      return 1.0f;
+  }
+  
+  std::array<uint16_t, 2> getSize() const override {
+    uint16_t width = 0;
+    uint16_t height = 0;
+    if(opaqueView->callbacks->getSize != 0)
+      opaqueView->callbacks->getSize(opaqueView, opaqueView->userdata, &width, &height);
+    return {{ width, height }};
+  }
+  
+  std::array<uint16_t, 2> getFramebufferSize() const override {
+    uint16_t fbWidth = 0;
+    uint16_t fbHeight = 0;
+    if(opaqueView->callbacks->getFramebufferSize != 0)
+      opaqueView->callbacks->getFramebufferSize(opaqueView, opaqueView->userdata, &fbWidth, &fbHeight);
+    return {{ fbWidth, fbHeight }};
+  }
+  
+  void activate() override {
+    if(opaqueView->callbacks->activate != 0)
+      opaqueView->callbacks->activate(opaqueView, opaqueView->userdata);
+  }
+  
+  void deactivate() override {
+    if(opaqueView->callbacks->deactivate != 0)
+      opaqueView->callbacks->deactivate(opaqueView, opaqueView->userdata);
+  }
+  
+  void notify() override {
+    if(opaqueView->callbacks->notify != 0)
+      opaqueView->callbacks->notify(opaqueView, opaqueView->userdata);
+  }
+  
+  void invalidate() override {
+    if(opaqueView->callbacks->invalidate != 0)
+      opaqueView->callbacks->invalidate(opaqueView, opaqueView->userdata);
+  }
+  
+  void swap() override {
+    if(opaqueView->callbacks->swap != 0)
+      opaqueView->callbacks->swap(opaqueView, opaqueView->userdata);
+  }
+};
+
+/*****************************************************************************/
+
+int mbgl_CApiView_init(mbgl_CApiView_Callbacks_t* callbacks, void* userdata, mbgl_CApiView_t** out) {
+  mbgl_CApiView_t* result = (mbgl_CApiView_t*)malloc(sizeof(*result));
+  result->callbacks = callbacks;
+  result->userdata = userdata;
+  result->view = new CApiView(result);
+  *out = result;
+  return 0;
+}
+
+int mbgl_CApiView_close(mbgl_CApiView_t* view) {
+  if (view != 0) {
+    delete view->view;
+    view->view = 0;
+    free(view);
+    
+    view->callbacks = {0};
+    view->userdata = 0;
+  }
+  return 0;
+}
+
 /*****************************************************************************/
 
 struct mbgl_GLFWView_t {
-	GLFWView* view;
+  union {
+    mbgl_View_t base;
+    GLFWView* view;
+  };
 };
 
 /*****************************************************************************/
 
 int mbgl_GLFWView_init(int fullscreen, int benchmark, mbgl_GLFWView_t** out)
 {
-	mbgl_GLFWView_t* result = (mbgl_GLFWView_t*)malloc(sizeof(*result));
-	result->view = new GLFWView;
-	*out = result;
-	return 0;
+  mbgl_GLFWView_t* result = (mbgl_GLFWView_t*)malloc(sizeof(*result));
+  result->view = new GLFWView(fullscreen, benchmark);
+  *out = result;
+  return 0;
 }
 
 int mbgl_GLFWView_close(mbgl_GLFWView_t* view)
 {
-	if (view != NULL) {
-		delete view->view;
-		view->view = NULL;
-		free(view);
-	}
-	return 0;
+  if (view != NULL) {
+    delete view->view;
+    view->view = NULL;
+    free(view);
+  }
+  return 0;
 }
 
 MBGL_C_EXPORT
 void mbgl_GLFWView_setChangeStyleCallback(mbgl_GLFWView_t* view, void (*callback)(mbgl_GLFWView_t* view, void*), void* userdata) {
-	view->view->setChangeStyleCallback([view, callback, userdata]() {
-		callback(view, userdata);
-	});
+  view->view->setChangeStyleCallback([view, callback, userdata]() {
+    callback(view, userdata);
+  });
 }
 
 MBGL_C_EXPORT
 void mbgl_GLFWView_setShouldClose(mbgl_GLFWView_t* view) {
-	view->view->setShouldClose();
+  view->view->setShouldClose();
 }
 
 MBGL_C_EXPORT
 void mbgl_GLFWView_setWindowTitle(mbgl_GLFWView_t* view, const char* title) {
-	view->view->setWindowTitle(std::string(title));
+  view->view->setWindowTitle(std::string(title));
 }
 
 MBGL_C_EXPORT
 void mbgl_GLFWView_run(mbgl_GLFWView_t* view) {
-	view->view->run();
+  view->view->run();
 }
 
 MBGL_C_EXPORT
 void mbgl_GLFWView_report(mbgl_GLFWView_t* view, float duration) {
-	view->view->report(duration);
+  view->view->report(duration);
 }
 
 /*****************************************************************************/
@@ -67,7 +178,7 @@ struct mbgl_SQLiteCache_t {
 
 MBGL_C_EXPORT
 int mbgl_SQLiteCache_init(const char* path, mbgl_SQLiteCache_t** out) {
-	mbgl_SQLiteCache_t* result = (mbgl_SQLiteCache_t*)malloc(sizeof(*result));
+  mbgl_SQLiteCache_t* result = (mbgl_SQLiteCache_t*)malloc(sizeof(*result));
   result->cache = new mbgl::SQLiteCache(std::string(path));
   *out = result;
   return 0;
@@ -93,7 +204,7 @@ struct mbgl_DefaultFileSource_t {
 
 MBGL_C_EXPORT
 int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out) {
-	mbgl_DefaultFileSource_t* result = (mbgl_DefaultFileSource_t*)malloc(sizeof(*result));
+  mbgl_DefaultFileSource_t* result = (mbgl_DefaultFileSource_t*)malloc(sizeof(*result));
   result->fileSource = new mbgl::DefaultFileSource(cache->cache);
   *out = result;
   return 0;
@@ -128,8 +239,8 @@ struct mbgl_Map_t {
 /*****************************************************************************/
 
 MBGL_C_EXPORT
-int mbgl_Map_init(mbgl_GLFWView_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out) {
-	mbgl_Map_t* result = (mbgl_Map_t*)malloc(sizeof(*result));
+int mbgl_Map_init(mbgl_View_t* view, mbgl_DefaultFileSource_t* fileSource, mbgl_Map_t** out) {
+  mbgl_Map_t* result = (mbgl_Map_t*)malloc(sizeof(*result));
   result->map = new mbgl::Map(*view->view, *fileSource->fileSource);
   *out = result;
   return 0;
