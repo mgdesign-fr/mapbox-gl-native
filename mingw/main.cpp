@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     }
 
     mbgl_Map_t* map = NULL;
-    mbgl_Map_init(view, fileSource, &map);
+    mbgl_Map_init((mbgl_View_t*)view, fileSource, &map);
 
     mbgl_Map_setLatLngZoom(map, latitude, longitude, zoom);
     mbgl_Map_setBearing(map, bearing);
