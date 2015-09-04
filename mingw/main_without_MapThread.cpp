@@ -237,25 +237,45 @@ int main(int argc, char *argv[]) {
         mbgl::Log::Info(mbgl::Event::General, "BENCHMARK MODE: Some optimizations are disabled.");
     }
 
-    mbgl::SQLiteCache cache("cache.sqlite");
-    mbgl::DefaultFileSource fileSource(&cache);
+    //mbgl::SQLiteCache cache("cache.sqlite");
+    mbgl_SQLiteCache_t* cache = NULL;
+    mbgl_SQLiteCache_init("cache.sqlite", &cache);
+    
+    //mbgl::DefaultFileSource fileSource(&cache);
+    mbgl_DefaultFileSource_t* fileSource = NULL;
+    mbgl_DefaultFileSource_init(cache, &fileSource);
 
     // Set access token if present
     const char *token = getenv("MAPBOX_ACCESS_TOKEN");
     if (token == nullptr) {
         mbgl::Log::Warning(mbgl::Event::Setup, "no access token set. mapbox.com tiles won't work.");
     } else {
-        fileSource.setAccessToken(std::string(token));
+        mbgl_DefaultFileSource_setAccessToken(fileSource, token);
     }
 
-    mbgl::MapThreadContext imMapThreadContext;                                    // IMPORTANT(nico) must be created before MapContext (implicit dependency)
+    // IMPORTANT(nico) must be created before MapContext (implicit dependency)
+    //mbgl::MapThreadContext imMapThreadContext;
+    mbgl_MapThreadContext_t* inMapThreadContext = NULL;
+    mbgl_MapThreadContext_init(&inMapThreadContext);
+    
+    //mbgl::MapData mapData(mbgl::MapMode::Continuous, 1.0f);
+    mbgl_MapData_t* mapData = NULL;
+    mbgl_MapData_init((int)mbgl::MapMode::Continuous, 1.0f, &mapData);
+    
+    //mbgl::MapContext mapContext(view, fileSource, mapData);
+    mbgl_MapContext_t* mapContext = NULL;
+    mbgl_MapContext_init((mbgl_View_t*)view_c, fileSource, mapData, &mapContext);
+    
+    //mbgl::Transform transform(view);
+    mbgl_Transform_t* transform = NULL;
+    mbgl_Transform_init((mbgl_View_t*)view_c, &transform);
 
-    mbgl::MapData mapData(mbgl::MapMode::Continuous, 1.0f);
-    mbgl::MapContext mapContext(view, fileSource, mapData);
-    mbgl::Transform transform(view);
-
-    mbgl::MapImmediate imMap(&mapData, &mapContext, &transform);
-    imMap.resize(&view);
+    //mbgl::MapImmediate imMap(&mapData, &mapContext, &transform);
+    mbgl_MapImmediate_t* imMap = NULL;
+    mbgl_MapImmediate_init(mapData, mapContext, transform, &imMap);
+    
+    //imMap.resize(&view);
+    mbgl_MapImmediate_resize(imMap, (mbgl_View_t*)view_c);
 
     // Load style
     if (style.empty()) {
@@ -263,25 +283,35 @@ int main(int argc, char *argv[]) {
         style = newStyle.first;
     }
 
-    mapContext.setStyleURL(style);
+    //mapContext.setStyleURL(style);
+    mbgl_MapContext_setStyleURL(mapContext, style.c_str());
 
     while (!(shouldCloseWindow || glfwWindowShouldClose(window))) {
         
         glfwPollEvents();
-        imMapThreadContext.process();
+        
+        //imMapThreadContext.process();
+        mbgl_MapThreadContext_process(inMapThreadContext);
 
         if (viewData.dirty) {
-            imMap.resize(&view);
+            //imMap.resize(&view);
+            mbgl_MapImmediate_resize(imMap, (mbgl_View_t*)view_c);
             viewData.dirty = 0;
         }
 
         longitude += 1e-3;
         zoom = 5.0 + 0.25 * cos(longitude * 8.0) - 2.0 * sin(longitude * 1.33);
-        transform.setLatLngZoom(mbgl::LatLng{latitude, longitude}, zoom, mbgl::CameraOptions());
+        
+        //transform.setLatLngZoom(mbgl::LatLng{latitude, longitude}, zoom, mbgl::CameraOptions());
+        mbgl_Transform_setLatLngZoom(transform, latitude, longitude, zoom);
+        
         mapContext.triggerUpdate(transform.getState(), mbgl::Update::Zoom);
         
-        imMap.render(&view);
-        imMap.update();
+        //imMap.render(&view);
+        mbgl_MapImmediate_render(imMap, (mbgl_View_t*)view_c);
+        
+        //imMap.update();
+        mbgl_MapImmediate_update(imMap);
     }
 
     mapContext.cleanup();
