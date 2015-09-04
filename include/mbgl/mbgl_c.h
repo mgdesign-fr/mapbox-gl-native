@@ -2,25 +2,25 @@
 #define MBGL_MAIN_C_H
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-	#ifdef MBGL_C_EXPORTS
-		#ifdef __GNUC__
-		#define MBGL_C_EXPORT __attribute__ ((dllexport))
-		#else
-		#define MBGL_C_EXPORT __declspec(dllexport)
-		#endif
-	#else
-		#ifdef __GNUC__
-		#define MBGL_C_EXPORT __attribute__ ((dllimport))
-		#else
-		#define MBGL_C_EXPORT __declspec(dllimport)
-		#endif
-	#endif
+  #ifdef MBGL_C_EXPORTS
+    #ifdef __GNUC__
+    #define MBGL_C_EXPORT __attribute__ ((dllexport))
+    #else
+    #define MBGL_C_EXPORT __declspec(dllexport)
+    #endif
+  #else
+    #ifdef __GNUC__
+    #define MBGL_C_EXPORT __attribute__ ((dllimport))
+    #else
+    #define MBGL_C_EXPORT __declspec(dllimport)
+    #endif
+  #endif
 #else
-	#if __GNUC__ >= 4
-		#define MBGL_C_EXPORT __attribute__ ((visibility ("default")))
-		#else
-		#define MBGL_C_EXPORT
-	#endif
+  #if __GNUC__ >= 4
+    #define MBGL_C_EXPORT __attribute__ ((visibility ("default")))
+    #else
+    #define MBGL_C_EXPORT
+  #endif
 #endif
 
 #ifdef __cplusplus
