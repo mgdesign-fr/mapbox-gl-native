@@ -62,6 +62,20 @@ struct MapImmediate {
         }
     }
 
+    void resize(mbgl::View* view) {
+        transform->resize(view->getSize());
+        mapContext->triggerUpdate(transform->getState(), mbgl::Update::Dimensions);
+    }
+
+    void update() {
+        // TODO(nico) give the clock in a known unit as a parameter, then convert to mbgl::Clock (which is std::chrono::steady_clock)
+        mbgl::Update flags = transform->updateTransitions(mbgl::Clock::now());
+        if (mapData->getNeedsRepaint()) {
+            flags |= mbgl::Update::Repaint;
+        }
+        mapContext->triggerUpdate(transform->getState(), flags);
+    }
+
 };
 
 struct MapThreadContext {
@@ -166,7 +180,7 @@ int main(int argc, char *argv[]) {
 
     view = std::make_unique<GLFWView>(fullscreen, benchmark);
 
-    mbgl::SQLiteCache cache("/tmp/mbgl-cache.db");
+    mbgl::SQLiteCache cache("cache.sqlite");
     mbgl::DefaultFileSource fileSource(&cache);
 
     // Set access token if present
@@ -179,18 +193,14 @@ int main(int argc, char *argv[]) {
 
     //mbgl::Map map(*view, fileSource);
 
-    MapThreadContext imMapThreadContext;
+    MapThreadContext imMapThreadContext;                                    // IMPORTANT(nico) must be created before MapContext (implicit dependency)
 
     mbgl::MapData mapData(mbgl::MapMode::Continuous, 1.0f);
     mbgl::MapContext mapContext(*view, fileSource, mapData);
     mbgl::Transform transform(*view);
 
     MapImmediate imMap(&mapData, &mapContext, &transform);
-
-    //printf("yo!\n");
-
-    transform.resize(view->getSize());
-    //mapContext.triggerUpdate(transform.getState(), mbgl::Update::Dimensions);
+    imMap.resize(view.get());
 
     //mapData.setDebug(true);
     /*
@@ -231,8 +241,6 @@ int main(int argc, char *argv[]) {
 
     mapContext.setStyleURL(style);
 
-    zoom = 5.0;
-
     //view->run();
     while (!glfwWindowShouldClose(view->window)) {
         
@@ -243,6 +251,8 @@ int main(int argc, char *argv[]) {
         const bool dirty = true; //!view->clean.test_and_set();
 
         longitude += 1e-3;
+        zoom = 5.0 + 0.25 * cos(longitude * 8.0) - 2.0 * sin(longitude * 1.33);
+
         transform.setLatLngZoom(mbgl::LatLng{latitude, longitude}, zoom, mbgl::CameraOptions());
         mapContext.triggerUpdate(transform.getState(), mbgl::Update::Zoom);
         
@@ -260,14 +270,7 @@ int main(int argc, char *argv[]) {
             }
 
             //map->nudgeTransitions();
-            mbgl::Update flags = transform.updateTransitions(mbgl::Clock::now());
-            if (mapData.getNeedsRepaint()) {
-                flags |= mbgl::Update::Repaint;
-            }
-            if (flags & mbgl::Update::Dimensions) {
-                transform.resize(view->getSize());
-            }
-            mapContext.triggerUpdate(transform.getState(), flags);
+            imMap.update();
         }
     }
 
