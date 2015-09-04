@@ -121,7 +121,7 @@ MBGL_C_EXPORT
 void mbgl_Map_setStyleURL(mbgl_Map_t* map, const char* url);
 
 MBGL_C_EXPORT
-void mbgl_Map_setStyleJSON(mbgl_Map_t* map, const char* json/*TODO, const char* base = ""*/);
+void mbgl_Map_setStyleJSON(mbgl_Map_t* map, const char* json);
 
 MBGL_C_EXPORT
 const char* mbgl_Map_getStyleURL(mbgl_Map_t* map);
@@ -130,19 +130,15 @@ MBGL_C_EXPORT
 const char* mbgl_Map_getStyleJSON(mbgl_Map_t* map);
 
 // Scale
-// TODO other functions
 MBGL_C_EXPORT
-void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, double zoom/*TODO , const Duration& = Duration::zero()*/);
+void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, double zoom);
 
 // Rotation
 MBGL_C_EXPORT
-void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey/*TODO, const Duration& = Duration::zero()*/);
+void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey);
 
 MBGL_C_EXPORT
-void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees/*TODO, const Duration& = Duration::zero()*/);
-
-/*TODO MBGL_C_EXPORT
-void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees, double cx, double cy);*/
+void mbgl_Map_setBearing(mbgl_Map_t* map, double degrees);
 
 MBGL_C_EXPORT
 double mbgl_Map_getBearing(mbgl_Map_t* map);
