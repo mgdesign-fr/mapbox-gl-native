@@ -309,6 +309,14 @@ mbgl_MapContext_setStyleURL = _dll.mbgl_MapContext_setStyleURL
 mbgl_MapContext_setStyleURL.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.c_char_p ]
 mbgl_MapContext_setStyleURL.restype = None
 
+# mbgl_MapContext_setStyleJSON
+#
+# SEE : void mbgl_MapContext_setStyleJSON(mbgl_MapContext_t* mapContext, const char* json);
+# 
+mbgl_MapContext_setStyleJSON = _dll.mbgl_MapContext_setStyleJSON
+mbgl_MapContext_setStyleJSON.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.c_char_p ]
+mbgl_MapContext_setStyleJSON.restype = None
+
 # Used for mbgl_MapContext_triggerUpdate
 #
 mbgl_MapContext_Update_Nothing           = 0
@@ -326,6 +334,12 @@ mbgl_MapContext_Update_Repaint           = 1 << 6
 mbgl_MapContext_triggerUpdate = _dll.mbgl_MapContext_triggerUpdate
 mbgl_MapContext_triggerUpdate.argtypes = [ ctypes.POINTER(mbgl_MapContext_t), ctypes.POINTER(mbgl_Transform_t), ctypes.c_int ]
 mbgl_MapContext_triggerUpdate.restype = None
+
+# mbgl_MapContext_cleanup
+#
+mbgl_MapContext_cleanup = _dll.mbgl_MapContext_cleanup
+mbgl_MapContext_cleanup.argtypes = [ ctypes.POINTER(mbgl_MapContext_t) ]
+mbgl_MapContext_cleanup.restype = None
 
 
 # mbgl_MapThreadContext_t type

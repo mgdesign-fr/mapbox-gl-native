@@ -249,7 +249,13 @@ MBGL_C_EXPORT
 void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styleUrl);
 
 MBGL_C_EXPORT
+void mbgl_MapContext_setStyleJSON(mbgl_MapContext_t* mapContext, const char* json);
+
+MBGL_C_EXPORT
 void mbgl_MapContext_triggerUpdate(mbgl_MapContext_t* mapContext, mbgl_Transform_t* transform, int flags);
+
+MBGL_C_EXPORT
+void mbgl_MapContext_cleanup(mbgl_MapContext_t* mapContext);
 
 /*****************************************************************************/
 

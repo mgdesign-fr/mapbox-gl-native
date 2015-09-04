@@ -407,8 +407,19 @@ void mbgl_MapContext_setStyleURL(mbgl_MapContext_t* mapContext, const char* styl
 }
 
 MBGL_C_EXPORT
+void mbgl_MapContext_setStyleJSON(mbgl_MapContext_t* mapContext, const char* json) {
+  mapContext->mapContext->setStyleJSON(json, "");
+}
+
+
+MBGL_C_EXPORT
 void mbgl_MapContext_triggerUpdate(mbgl_MapContext_t* mapContext,  mbgl_Transform_t* transform, int flags) {
   mapContext->mapContext->triggerUpdate(transform->transform->getState(), (mbgl::Update)flags);
+}
+
+MBGL_C_EXPORT
+void mbgl_MapContext_cleanup(mbgl_MapContext_t* mapContext) {
+  mapContext->mapContext->cleanup();
 }
 
 /*****************************************************************************/
