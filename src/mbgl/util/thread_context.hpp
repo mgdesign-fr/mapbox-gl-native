@@ -94,7 +94,22 @@ private:
     static uv::tls<ThreadContext> current;
 
     friend class MainThreadContextRegistrar;
+    friend class MapThreadContextRegistrar;
     template <class Object> friend class Thread;
+};
+
+class MapThreadContextRegistrar {
+public:
+    MapThreadContextRegistrar() : context("Map", ThreadType::Map, ThreadPriority::Regular) {
+        ThreadContext::current.set(&context);
+    }
+
+    ~MapThreadContextRegistrar() {
+        ThreadContext::current.set(nullptr);
+    }
+
+private:
+    ThreadContext context;
 };
 
 }
