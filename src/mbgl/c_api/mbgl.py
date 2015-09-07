@@ -120,10 +120,10 @@ class mbgl_DefaultFileSource_t(ctypes.Structure):
 
 # mbgl_DefaultFileSource_init
 #
-# SEE : int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out);
+# SEE : int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, const char* assetRoot, mbgl_DefaultFileSource_t** out);
 # 
 mbgl_DefaultFileSource_init = _dll.mbgl_DefaultFileSource_init
-mbgl_DefaultFileSource_init.argtypes = [ ctypes.POINTER(mbgl_SQLiteCache_t), ctypes.POINTER(ctypes.POINTER(mbgl_DefaultFileSource_t)) ]
+mbgl_DefaultFileSource_init.argtypes = [ ctypes.POINTER(mbgl_SQLiteCache_t), ctypes.c_char_p, ctypes.POINTER(ctypes.POINTER(mbgl_DefaultFileSource_t)) ]
 mbgl_DefaultFileSource_init.restype = ctypes.c_int
 
 # mbgl_DefaultFileSource_close

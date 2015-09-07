@@ -98,7 +98,7 @@ typedef struct mbgl_DefaultFileSource_t mbgl_DefaultFileSource_t;
 
 // Replace mbgl_SQLiteCache_t with mbgl_Cache_t
 MBGL_C_EXPORT
-int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out);
+int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, const char* assetRoot, mbgl_DefaultFileSource_t** out);
 
 MBGL_C_EXPORT
 int mbgl_DefaultFileSource_close(mbgl_DefaultFileSource_t* defaultFileSource);

@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     
     //mbgl::DefaultFileSource fileSource(&cache);
     mbgl_DefaultFileSource_t* fileSource = NULL;
-    mbgl_DefaultFileSource_init(cache, &fileSource);
+    mbgl_DefaultFileSource_init(cache, "", &fileSource);
 
     // Set access token if present
     const char *token = getenv("MAPBOX_ACCESS_TOKEN");
@@ -261,6 +261,7 @@ int main(int argc, char *argv[]) {
     //mbgl::MapData mapData(mbgl::MapMode::Continuous, 1.0f);
     mbgl_MapData_t* mapData = NULL;
     mbgl_MapData_init((int)mbgl::MapMode::Continuous, 1.0f, &mapData);
+    mbgl_MapData_setDebug(mapData, 1);
     
     //mbgl::MapContext mapContext(view, fileSource, mapData);
     mbgl_MapContext_t* mapContext = NULL;

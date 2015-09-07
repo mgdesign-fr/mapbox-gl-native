@@ -124,9 +124,9 @@ struct mbgl_DefaultFileSource_t {
 /*****************************************************************************/
 
 MBGL_C_EXPORT
-int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, mbgl_DefaultFileSource_t** out) {
+int mbgl_DefaultFileSource_init(mbgl_SQLiteCache_t* cache, const char* assetRoot, mbgl_DefaultFileSource_t** out) {
   mbgl_DefaultFileSource_t* result = (mbgl_DefaultFileSource_t*)malloc(sizeof(*result));
-  result->fileSource = new mbgl::DefaultFileSource(cache->cache);
+  result->fileSource = new mbgl::DefaultFileSource(cache->cache, assetRoot);
   *out = result;
   return 0;
 }
