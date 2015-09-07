@@ -1,8 +1,12 @@
-```
-This fork is about trying to build/port mapbox-gl to win32, see 'BUILD-win32.md' for more
-```
+# This fork
 
-[![Travis](https://api.travis-ci.org/mapbox/mapbox-gl-native.svg?branch=master)](https://travis-ci.org/mapbox/mapbox-gl-native/builds)
+This fork is about build/port mapbox-gl to win32, see [`BUILD-win32.md`](./BUILD-win32.md) for more.
+
+We also work on creating a C API (we use with python bindings) :
+* The C API is defined in `include/mbgl/mbgl_c.h`
+* and implemented in `src/mbgl/c_api/`
+
+# Mapbox GL native
 
 An OpenGL ES-based renderer for [Mapbox Vector Tiles](https://www.mapbox.com/blog/vector-tiles), consisting of a C++ library for OS X and Linux and SDK bindings for iOS and Android.
 
