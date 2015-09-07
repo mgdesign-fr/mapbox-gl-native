@@ -232,6 +232,12 @@ int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out);
 MBGL_C_EXPORT
 int mbgl_MapData_close(mbgl_MapData_t* mapData);
 
+MBGL_C_EXPORT
+int mbgl_MapData_getDebug(mbgl_MapData_t* mapData);
+
+MBGL_C_EXPORT
+void mbgl_MapData_setDebug(mbgl_MapData_t* mapData, int value);
+
 /*****************************************************************************/
 
 typedef struct mbgl_MapContext_t mbgl_MapContext_t;

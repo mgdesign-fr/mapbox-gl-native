@@ -375,6 +375,17 @@ int mbgl_MapData_close(mbgl_MapData_t* mapData) {
   return 0;
 }
 
+
+MBGL_C_EXPORT
+int mbgl_MapData_getDebug(mbgl_MapData_t* mapData) {
+  return mapData->mapData->getDebug();
+}
+
+MBGL_C_EXPORT
+void mbgl_MapData_setDebug(mbgl_MapData_t* mapData, int value) {
+  mapData->mapData->setDebug(!!value);
+}
+
 /*****************************************************************************/
 
 struct mbgl_MapContext_t {

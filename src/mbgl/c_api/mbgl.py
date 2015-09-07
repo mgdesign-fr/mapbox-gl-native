@@ -279,6 +279,17 @@ mbgl_MapData_close = _dll.mbgl_MapData_close
 mbgl_MapData_close.argtypes = [ ctypes.POINTER(mbgl_MapData_t) ]
 mbgl_MapData_close.restype = ctypes.c_int
 
+# mbgl_MapData_getDebug
+#
+mbgl_MapData_getDebug = _dll.mbgl_MapData_getDebug
+mbgl_MapData_getDebug.argtypes = [ ctypes.POINTER(mbgl_MapData_t) ]
+mbgl_MapData_getDebug.restype = ctypes.c_int
+
+# mbgl_MapData_setDebug
+#
+mbgl_MapData_setDebug = _dll.mbgl_MapData_setDebug
+mbgl_MapData_setDebug.argtypes = [ ctypes.POINTER(mbgl_MapData_t), ctypes.c_int ]
+mbgl_MapData_setDebug.restype = None
 
 # mbgl_MapContext_t type
 # 
