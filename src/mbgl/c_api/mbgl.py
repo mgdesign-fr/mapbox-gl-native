@@ -433,3 +433,206 @@ mbgl_MapImmediate_update.restype = None
 mbgl_gl_initializeExtensions = _dll.mbgl_gl_initializeExtensions
 mbgl_gl_initializeExtensions.argtypes = []
 mbgl_gl_initializeExtensions.restype = ctypes.c_int
+
+
+#
+
+class SQLiteCache:
+  
+  def __init__(self, path):
+    _c = ctypes.POINTER(mbgl_SQLiteCache_t)()
+    mbgl_SQLiteCache_init(path, _c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_SQLiteCache_close(self._c)
+    self._c = None
+    
+    
+class DefaultFileSource:
+  
+  def __init__(self, cache, assetRoot):
+    _c = ctypes.POINTER(mbgl_DefaultFileSource_t)()
+    mbgl_DefaultFileSource_init(cache._c, assetRoot, _c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_DefaultFileSource_close(self._c)
+    self._c = None
+    
+  def setAccessToken(self, token):
+    return mbgl_DefaultFileSource_setAccessToken(self._c, token)
+
+
+class View:
+  
+  def __init__(self):
+    
+    def _View_getPixelRatio(_view, _userdata):
+      return self.getPixelRatio()
+    
+    def _View_getSize(_view, _userdata, out_width, out_height):
+      width, height = self.getSize()
+      out_width[0] = ctypes.c_uint16(width)
+      out_height[0] = ctypes.c_uint16(height)
+      
+    def _View_getFramebufferSize(_view, _userdata, out_width, out_height):
+      width, height = self.getFramebufferSize()
+      out_width[0] = ctypes.c_uint16(width)
+      out_height[0] = ctypes.c_uint16(height)
+    
+    def _View_activate(_view, _userdata):
+      return self.activate()
+    
+    def _View_deactivate(_view, _userdata):
+      return self.deactivate()
+    
+    def _View_notify(_view, _userdata):
+      return self.notify()
+    
+    def _View_invalidate(_view, _userdata):
+      return self.invalidate()
+    
+    def _View_swap(_view, _userdata):
+      return self.swap()
+    
+    _c_callbacks = mbgl_CApiView_Callbacks_t()
+    _c_callbacks.getPixelRatio = mbgl_CApiView_Callbacks_t_getPixelRatio(_View_getPixelRatio)
+    _c_callbacks.getSize = mbgl_CApiView_Callbacks_t_getSize(_View_getSize)
+    _c_callbacks.getFramebufferSize = mbgl_CApiView_Callbacks_t_getFramebufferSize(_View_getFramebufferSize)
+    _c_callbacks.activate = mbgl_CApiView_Callbacks_t_activate(_View_activate)
+    _c_callbacks.deactivate = mbgl_CApiView_Callbacks_t_deactivate(_View_deactivate)
+    _c_callbacks.notify = mbgl_CApiView_Callbacks_t_notify(_View_notify)
+    _c_callbacks.invalidate = mbgl_CApiView_Callbacks_t_invalidate(_View_invalidate)
+    _c_callbacks.swap = mbgl_CApiView_Callbacks_t_swap(_View_swap)
+    
+    _c = ctypes.POINTER(mbgl_CApiView_t)()
+    mbgl_CApiView_init(_c_callbacks, None, _c)
+    
+    self._c_callbacks = _c_callbacks
+    self._c = _c
+    
+  def dispose(self):
+    
+    mbgl_CApiView_close(self._c)
+    self._c = None
+    self._c_callbacks = None
+    
+  def getPixelRatio(self):
+    return 1.0
+  
+  def getSize(self):
+    raise NotImplementedError()
+  
+  def getFramebufferSize(self):
+    return NotImplementedError()
+  
+  def activate(self):
+    pass
+
+  def deactivate(self):
+    pass
+    
+  def notify(self):
+    pass
+
+  def invalidate(self):
+    pass
+
+  def swap(self):
+    pass
+
+
+class MapThreadContext:
+  
+  def __init__(self):
+    _c = ctypes.POINTER(mbgl_MapThreadContext_t)()
+    mbgl_MapThreadContext_init(_c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_MapThreadContext_close(self._c)
+    self._c = None
+    
+  def process(self):
+    return mbgl_MapThreadContext_process(self._c)
+
+
+class MapContext:
+  
+  def __init__(self, view, mapData, fileSource):
+    _c = ctypes.POINTER(mbgl_MapContext_t)()
+    view_ptr = ctypes.cast(view._c, ctypes.POINTER(mbgl_View_t))
+    mbgl_MapContext_init(view_ptr, mapData._c, fileSource._c, _c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_MapContext_close(self._c)
+    self._c = None
+    
+  def setStyleURL(self, path):
+    return mbgl_MapContext_setStyleURL(self._c, path)
+  
+  def setStyleJSON(self, json):
+    return mbgl_MapContext_setStyleJSON(self._c, json)
+  
+  def triggerUpdate(self, transform, flags):
+    mbgl_MapContext_triggerUpdate(self._c, transform._c, flags)
+
+
+class MapData:
+  
+  def __init__(self, mapMode, pixelRatio):
+    _c = ctypes.POINTER(mbgl_MapData_t)()
+    mbgl_MapData_init(mapMode, pixelRatio, _c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_MapData_close(self._c)
+    self._c = None
+    
+  def getDebug(self):
+    return mbgl_MapData_getDebug(self._c)    
+    
+  def setDebug(self, value):
+    return mbgl_MapData_setDebug(self._c, value)    
+    
+
+class Transform:
+  
+  def __init__(self, view):
+    _c = ctypes.POINTER(mbgl_Transform_t)()
+    view_ptr = ctypes.cast(view._c, ctypes.POINTER(mbgl_View_t))
+    mbgl_Transform_init(view_ptr, _c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_Transform_close(self._c)
+    self._c = None
+    
+  def setLatLngZoom(self, lat, lng, zoom):
+    return mbgl_Transform_setLatLngZoom(self._c, lat, lng, zoom)
+
+
+class MapImmediate:
+  
+  def __init__(self, mapData, mapContext, transform):
+    _c = ctypes.POINTER(mbgl_MapImmediate_t)()
+    mbgl_MapImmediate_init(mapData._c, mapContext._c, transform._c, _c)
+    self._c = _c
+    
+  def dispose(self):
+    mbgl_MapImmediate_close(self._c)
+    self._c = None
+    
+  def resize(self, view):
+    view_ptr = ctypes.cast(view._c, ctypes.POINTER(mbgl_View_t))
+    return mbgl_MapImmediate_resize(self._c, view_ptr)
+
+  def render(self, view):
+    view_ptr = ctypes.cast(view._c, ctypes.POINTER(mbgl_View_t))
+    mbgl_MapImmediate_render(self._c, view_ptr)
+
+  def update(self):
+    mbgl_MapImmediate_update(self._c)
+
