@@ -491,8 +491,10 @@ int mbgl_MapImmediate_close(mbgl_MapImmediate_t* map) {
 }
 
 MBGL_C_EXPORT
-void mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view) {
-  map->map->render(view->view);
+int mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view) {
+  int result;
+  result = map->map->render(view->view);
+  return result;
 }
 
 MBGL_C_EXPORT

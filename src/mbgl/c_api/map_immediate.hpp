@@ -28,7 +28,7 @@ struct MapImmediate {
         assert(transform_);
     }
 
-    void render(mbgl::View* view) {
+    bool render(mbgl::View* view) {
         if (renderState == RenderState::never) {
             view->notifyMapChange(mbgl::MapChangeWillStartRenderingMap);
         }
@@ -47,6 +47,8 @@ struct MapImmediate {
             renderState = RenderState::fully;
             view->notifyMapChange(mbgl::MapChangeDidFinishRenderingMapFullyRendered);
         }
+
+        return fullyLoaded;
     }
 
     void resize(mbgl::View* view) {

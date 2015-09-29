@@ -406,11 +406,11 @@ mbgl_MapImmediate_close.restype = ctypes.c_int
 
 # mbgl_MapImmediate_render
 #
-# SEE : void mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view);
+# SEE : int mbgl_MapImmediate_render(mbgl_MapImmediate_t* map, mbgl_View_t* view);
 # 
 mbgl_MapImmediate_render = _dll.mbgl_MapImmediate_render
 mbgl_MapImmediate_render.argtypes = [ ctypes.POINTER(mbgl_MapImmediate_t), ctypes.POINTER(mbgl_View_t) ]
-mbgl_MapImmediate_render.restype = None
+mbgl_MapImmediate_render.restype = ctypes.c_int
 
 # mbgl_MapImmediate_resize
 #
@@ -631,7 +631,7 @@ class MapImmediate:
 
   def render(self, view):
     view_ptr = ctypes.cast(view._c, ctypes.POINTER(mbgl_View_t))
-    mbgl_MapImmediate_render(self._c, view_ptr)
+    return mbgl_MapImmediate_render(self._c, view_ptr)
 
   def update(self):
     mbgl_MapImmediate_update(self._c)
