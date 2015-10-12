@@ -28,7 +28,9 @@ def _loadDLL():
   
   # Add current path to sys.path (for release)
   #
-  sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+  this_dir = os.path.abspath(os.path.dirname(__file__))
+  sys.path.append(this_dir)
+  sys.path.append(os.path.join(this_dir, "mbgl-dll"))
   
   # Search dll in sys.path
   #
