@@ -436,6 +436,15 @@ mbgl_gl_initializeExtensions = _dll.mbgl_gl_initializeExtensions
 mbgl_gl_initializeExtensions.argtypes = []
 mbgl_gl_initializeExtensions.restype = ctypes.c_int
 
+#
+#
+mbgl_Util_setSpriteAtlasSize = _dll.mbgl_Util_setSpriteAtlasSize
+mbgl_Util_setSpriteAtlasSize.argtypes = [ ctypes.c_int ]
+mbgl_Util_setSpriteAtlasSize.restype = None
+
+mbgl_Util_getSpriteAtlasSize = _dll.mbgl_Util_getSpriteAtlasSize
+mbgl_Util_getSpriteAtlasSize.argtypes = []
+mbgl_Util_getSpriteAtlasSize.restype = ctypes.c_int
 
 #
 
@@ -638,3 +647,13 @@ class MapImmediate:
   def update(self):
     mbgl_MapImmediate_update(self._c)
 
+
+class Util:
+
+  @staticmethod
+  def setSpriteAtlasSize(size):
+    mbgl_Util_setSpriteAtlasSize(size)
+
+  @staticmethod
+  def getSpriteAtlasSize():
+    return mbgl_Util_getSpriteAtlasSize()

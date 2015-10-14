@@ -522,3 +522,15 @@ int mbgl_gl_initializeExtensions() {
   // TODO(nico) should allow user to pass his function pointer for getProcAddress ?
   mbgl::gl::InitializeExtensions(myGetProcAddress);  
 }
+
+/*****************************************************************************/
+
+MBGL_C_EXPORT
+void mbgl_Util_setSpriteAtlasSize(int size) {
+  mbgl::util::spriteAtlasSize = size;
+}
+
+MBGL_C_EXPORT
+int mbgl_Util_getSpriteAtlasSize() {
+  return mbgl::util::spriteAtlasSize; 
+}

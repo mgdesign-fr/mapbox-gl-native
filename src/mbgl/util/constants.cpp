@@ -1,5 +1,7 @@
 #include <mbgl/util/constants.hpp>
 
+int mbgl::util::spriteAtlasSize = 512;
+
 const float mbgl::util::tileSize = 512.0f;
 
 const double mbgl::util::DEG2RAD = M_PI / 180.0;

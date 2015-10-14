@@ -27,7 +27,7 @@ Style::Style(MapData& data_, uv_loop_t*)
       glyphStore(std::make_unique<GlyphStore>()),
       glyphAtlas(std::make_unique<GlyphAtlas>(1024, 1024)),
       spriteStore(std::make_unique<SpriteStore>()),
-      spriteAtlas(std::make_unique<SpriteAtlas>(512, 512, data.pixelRatio, *spriteStore)),
+      spriteAtlas(std::make_unique<SpriteAtlas>(mbgl::util::spriteAtlasSize, mbgl::util::spriteAtlasSize, data.pixelRatio, *spriteStore)),
       lineAtlas(std::make_unique<LineAtlas>(512, 512)),
       mtx(std::make_unique<uv::rwlock>()),
       workers(4) {

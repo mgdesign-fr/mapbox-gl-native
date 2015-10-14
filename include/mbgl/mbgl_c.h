@@ -306,6 +306,13 @@ int mbgl_gl_initializeExtensions();
 
 /*****************************************************************************/
 
+MBGL_C_EXPORT
+void mbgl_Util_setSpriteAtlasSize(int size);
+MBGL_C_EXPORT
+int mbgl_Util_getSpriteAtlasSize();
+
+/*****************************************************************************/
+
 #ifdef __cplusplus
 }
 #endif

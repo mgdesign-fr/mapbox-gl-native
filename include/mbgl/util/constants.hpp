@@ -9,6 +9,8 @@ namespace mbgl {
 
 namespace util {
 
+extern int spriteAtlasSize;
+
 extern const float tileSize;
 
 extern const double DEG2RAD;
