@@ -204,7 +204,7 @@ void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, 
 
 MBGL_C_EXPORT
 void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey/*TODO, const Duration& = Duration::zero()*/) {
-  map->map->rotateBy(sx, sy, ex, ey);
+  map->map->rotateBy( PrecisionPoint(sx, sy), PrecisionPoint(ex, ey) ;
 }
 
 MBGL_C_EXPORT
@@ -296,8 +296,7 @@ int mbgl_Transform_resize(mbgl_Transform_t* transform, uint16_t width, uint16_t 
 // Position
 MBGL_C_EXPORT
 void mbgl_Transform_setLatLng(mbgl_Transform_t* transform, double latitude, double longitude) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setLatLng(mbgl::LatLng(latitude,longitude), defaultCameraOptions);
+  transform->transform->setLatLng(mbgl::LatLng(latitude,longitude));
 }
 
 MBGL_C_EXPORT
@@ -321,15 +320,13 @@ double mbgl_Transform_getZoom(mbgl_Transform_t* transform) {
 // Position + zoom
 MBGL_C_EXPORT
 void mbgl_Transform_setLatLngZoom(mbgl_Transform_t* transform, double latitude, double longitude, double zoom) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setLatLngZoom(mbgl::LatLng(latitude,longitude), zoom, defaultCameraOptions);
+  transform->transform->setLatLngZoom(mbgl::LatLng(latitude,longitude), zoom);
 }
 
 // Angle
 MBGL_C_EXPORT
 void mbgl_Transform_setAngle(mbgl_Transform_t* transform, double angle) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setAngle(angle, defaultCameraOptions);
+  transform->transform->setAngle(angle);
 }
 
 MBGL_C_EXPORT
@@ -340,8 +337,7 @@ double mbgl_Transform_getAngle(mbgl_Transform_t* transform) {
 // Pitch
 MBGL_C_EXPORT
 void mbgl_Transform_setPitch(mbgl_Transform_t* transform, double pitch) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setPitch(pitch, defaultCameraOptions);
+  transform->transform->setPitch(pitch);
 }
 
 MBGL_C_EXPORT
