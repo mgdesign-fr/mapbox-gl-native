@@ -1,34 +1,34 @@
 #import "MBXViewController.h"
 
 #import <mbgl/ios/Mapbox.h>
-
-#import <mbgl/platform/darwin/settings_nsuserdefaults.hpp>
+#import <mbgl/util/default_styles.hpp>
 
 #import <CoreLocation/CoreLocation.h>
 
 static UIColor *const kTintColor = [UIColor colorWithRed:0.120 green:0.550 blue:0.670 alpha:1.000];
 
-static NSArray *const kStyleNames = @[
-    @"Streets",
-    @"Emerald",
-    @"Light",
-    @"Dark",
-    @"Satellite",
-];
-
-static NSUInteger const kStyleVersion = 8;
-
 @interface MBXViewController () <UIActionSheetDelegate, MGLMapViewDelegate>
 
 @property (nonatomic) MGLMapView *mapView;
+@property (nonatomic) NSUInteger styleIndex;
 
 @end
 
 @implementation MBXViewController
 
-mbgl::Settings_NSUserDefaults *settings = nullptr;
-
 #pragma mark - Setup
+
++ (void)initialize
+{
+    if (self == [MBXViewController class])
+    {
+        [[NSUserDefaults standardUserDefaults] registerDefaults:@{
+            @"MBXUserTrackingMode": @(MGLUserTrackingModeNone),
+            @"MBXShowsUserLocation": @NO,
+            @"MBXDebug": @NO,
+        }];
+    }
+}
 
 - (id)init
 {
@@ -38,6 +38,7 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
     {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveState:) name:UIApplicationDidEnterBackgroundNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(restoreState:) name:UIApplicationWillEnterForegroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveState:) name:UIApplicationWillTerminateNotification object:nil];
     }
 
     return self;
@@ -49,7 +50,6 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
 
     self.mapView = [[MGLMapView alloc] initWithFrame:self.view.bounds];
     self.mapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.mapView.showsUserLocation = YES;
     self.mapView.delegate = self;
     [self.view addSubview:self.mapView];
 
@@ -61,10 +61,12 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
                                                                              style:UIBarButtonItemStylePlain
                                                                             target:self
                                                                             action:@selector(showSettings)];
+    
+    self.styleIndex = 0;
 
     UIButton *titleButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [titleButton setFrame:CGRectMake(0, 0, 150, 40)];
-    [titleButton setTitle:[kStyleNames firstObject] forState:UIControlStateNormal];
+    [titleButton setTitle:@(mbgl::util::default_styles::orderedStyles[self.styleIndex].name) forState:UIControlStateNormal];
     [titleButton setTitleColor:kTintColor forState:UIControlStateNormal];
     [titleButton addTarget:self action:@selector(cycleStyles) forControlEvents:UIControlEventTouchUpInside];
     self.navigationItem.titleView = titleButton;
@@ -74,36 +76,44 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
                                                                              target:self
                                                                              action:@selector(locateUser)];
 
-    settings = new mbgl::Settings_NSUserDefaults();
+    [self.mapView addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleLongPress:)]];
+
     [self restoreState:nil];
 }
 
 - (void)saveState:(__unused NSNotification *)notification
 {
-    if (self.mapView && settings)
+    if (self.mapView)
     {
-        settings->longitude = self.mapView.centerCoordinate.longitude;
-        settings->latitude = self.mapView.centerCoordinate.latitude;
-        settings->zoom = self.mapView.zoomLevel;
-        settings->bearing = self.mapView.direction;
-        settings->pitch = self.mapView.pitch;
-        settings->debug = self.mapView.isDebugActive;
-        settings->userTrackingMode = self.mapView.userTrackingMode;
-        settings->showsUserLocation = self.mapView.showsUserLocation;
-        settings->save();
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSData *archivedCamera = [NSKeyedArchiver archivedDataWithRootObject:self.mapView.camera];
+        [defaults setObject:archivedCamera forKey:@"MBXCamera"];
+        [defaults setInteger:self.mapView.userTrackingMode forKey:@"MBXUserTrackingMode"];
+        [defaults setBool:self.mapView.showsUserLocation forKey:@"MBXShowsUserLocation"];
+        [defaults setBool:self.mapView.debugActive forKey:@"MBXDebug"];
+        [defaults synchronize];
     }
 }
 
 - (void)restoreState:(__unused NSNotification *)notification
 {
-    if (self.mapView && settings) {
-        settings->load();
-        [self.mapView setCenterCoordinate:CLLocationCoordinate2DMake(settings->latitude, settings->longitude) zoomLevel:settings->zoom animated:NO];
-        self.mapView.direction = settings->bearing;
-        self.mapView.pitch = settings->pitch;
-        self.mapView.userTrackingMode = settings->userTrackingMode;
-        self.mapView.showsUserLocation = settings->showsUserLocation;
-        [self.mapView setDebugActive:settings->debug];
+    if (self.mapView) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSData *archivedCamera = [defaults objectForKey:@"MBXCamera"];
+        MGLMapCamera *camera = archivedCamera ? [NSKeyedUnarchiver unarchiveObjectWithData:archivedCamera] : nil;
+        if (camera)
+        {
+            self.mapView.camera = camera;
+        }
+        NSInteger uncheckedTrackingMode = [defaults integerForKey:@"MBXUserTrackingMode"];
+        if (uncheckedTrackingMode >= 0 &&
+            (NSUInteger)uncheckedTrackingMode >= MGLUserTrackingModeNone &&
+            (NSUInteger)uncheckedTrackingMode <= MGLUserTrackingModeFollowWithCourse)
+        {
+            self.mapView.userTrackingMode = (MGLUserTrackingMode)uncheckedTrackingMode;
+        }
+        self.mapView.showsUserLocation = [defaults boolForKey:@"MBXShowsUserLocation"];
+        self.mapView.debugActive = [defaults boolForKey:@"MBXDebug"];
     }
 }
 
@@ -286,40 +296,35 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
             dispatch_async(dispatch_get_main_queue(), ^
             {
                 [self.mapView addAnnotations:annotations];
-
-                [self.mapView setCenterCoordinate:CLLocationCoordinate2DMake(38.904722, -77.016389)
-                                        zoomLevel:10
-                                         animated:NO];
-
-                [self.mapView setDirection:0];
+                [self.mapView showAnnotations:annotations animated:YES];
             });
         }
     });
+}
+
+- (void)handleLongPress:(UILongPressGestureRecognizer *)longPress
+{
+    if (longPress.state == UIGestureRecognizerStateBegan)
+    {
+        MGLPointAnnotation *point = [MGLPointAnnotation new];
+        point.coordinate = [self.mapView convertPoint:[longPress locationInView:longPress.view]
+                                 toCoordinateFromView:self.mapView];
+        point.title = @"Dropped Marker";
+        point.subtitle = [NSString stringWithFormat:@"lat: %.3f, lon: %.3f", point.coordinate.latitude, point.coordinate.longitude];
+        [self.mapView addAnnotation:point];
+        [self.mapView selectAnnotation:point animated:YES];
+    }
 }
 
 - (void)cycleStyles
 {
     UIButton *titleButton = (UIButton *)self.navigationItem.titleView;
 
-    NSString *styleName = [titleButton titleForState:UIControlStateNormal];
+    self.styleIndex = (self.styleIndex + 1) % mbgl::util::default_styles::numOrderedStyles;
 
-    if ( ! styleName)
-    {
-        styleName = [kStyleNames firstObject];
-    }
-    else
-    {
-        NSUInteger index = [kStyleNames indexOfObject:styleName] + 1;
-        if (index == [kStyleNames count]) index = 0;
-        styleName = [kStyleNames objectAtIndex:index];
-    }
+    self.mapView.styleURL = [NSURL URLWithString:@(mbgl::util::default_styles::orderedStyles[self.styleIndex].url)];
 
-    self.mapView.styleURL = [NSURL URLWithString:
-        [NSString stringWithFormat:@"asset://styles/%@-v%lu.json",
-            [styleName lowercaseString],
-            (unsigned long)kStyleVersion]];
-
-    [titleButton setTitle:styleName forState:UIControlStateNormal];
+    [titleButton setTitle:@(mbgl::util::default_styles::orderedStyles[self.styleIndex].name) forState:UIControlStateNormal];
 }
 
 - (void)locateUser
@@ -348,20 +353,26 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 
-    if (settings)
-    {
-        [self saveState:nil];
-        delete settings;
-        settings = nullptr;
-    }
+    [self saveState:nil];
 }
 
 #pragma mark - MGLMapViewDelegate
 
 - (MGLAnnotationImage *)mapView:(MGLMapView * __nonnull)mapView imageForAnnotation:(id <MGLAnnotation> __nonnull)annotation
 {
+    if ([annotation.title isEqualToString:@"Dropped Marker"]) return nil; // use default marker
+
     NSString *title = [(MGLPointAnnotation *)annotation title];
     NSString *lastTwoCharacters = [title substringFromIndex:title.length - 2];
+
+    UIColor *color;
+
+    // make every tenth annotation blue
+    if ([lastTwoCharacters hasSuffix:@"0"]) {
+        color = [UIColor blueColor];
+    } else {
+        color = [UIColor redColor];
+    }
 
     MGLAnnotationImage *image = [mapView dequeueReusableAnnotationImageWithIdentifier:lastTwoCharacters];
 
@@ -373,7 +384,7 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
 
         CGContextRef ctx = UIGraphicsGetCurrentContext();
 
-        CGContextSetFillColorWithColor(ctx, [[[UIColor redColor] colorWithAlphaComponent:0.75] CGColor]);
+        CGContextSetFillColorWithColor(ctx, [[color colorWithAlphaComponent:0.75] CGColor]);
         CGContextFillRect(ctx, rect);
 
         CGContextSetStrokeColorWithColor(ctx, [[UIColor blackColor] CGColor]);
@@ -390,6 +401,9 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
         [drawString drawInRect:stringRect];
 
         image = [MGLAnnotationImage annotationImageWithImage:UIGraphicsGetImageFromCurrentImageContext() reuseIdentifier:lastTwoCharacters];
+
+        // don't allow touches on blue annotations
+        if ([color isEqual:[UIColor blueColor]]) image.enabled = NO;
 
         UIGraphicsEndImageContext();
     }
@@ -421,16 +435,16 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
 {
     UIImage *newButtonImage;
     NSString *newButtonTitle;
-    
+
     switch (mode) {
         case MGLUserTrackingModeNone:
             newButtonImage = [UIImage imageNamed:@"TrackingLocationOffMask.png"];
             break;
-            
+
         case MGLUserTrackingModeFollow:
             newButtonImage = [UIImage imageNamed:@"TrackingLocationMask.png"];
             break;
-            
+
         case MGLUserTrackingModeFollowWithHeading:
             newButtonImage = [UIImage imageNamed:@"TrackingHeadingMask.png"];
             break;
@@ -439,7 +453,7 @@ mbgl::Settings_NSUserDefaults *settings = nullptr;
             newButtonTitle = @"Course";
             break;
     }
-    
+
     self.navigationItem.rightBarButtonItem.title = newButtonTitle;
     [UIView animateWithDuration:0.25 animations:^{
         self.navigationItem.rightBarButtonItem.image = newButtonImage;

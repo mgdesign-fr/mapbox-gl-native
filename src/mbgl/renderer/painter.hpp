@@ -37,10 +37,16 @@ struct FrameData;
 
 class DebugBucket;
 class FillBucket;
+class FillLayer;
 class LineBucket;
+class LineLayer;
 class CircleBucket;
+class CircleLayer;
 class SymbolBucket;
+class SymbolLayer;
 class RasterBucket;
+class RasterLayer;
+class BackgroundLayer;
 
 struct RasterProperties;
 
@@ -76,10 +82,8 @@ struct RenderItem {
 
 class Painter : private util::noncopyable {
 public:
-    Painter(MapData& data);
+    Painter(MapData&, TransformState&);
     ~Painter();
-
-    void setup();
 
     // Renders the backdrop of the OpenGL view. This also paints in areas where we don't have any
     // tiles whatsoever.
@@ -89,9 +93,7 @@ public:
     void changeMatrix();
 
     void render(const Style& style,
-                TransformState state,
-                const FrameData& frame,
-                const TimePoint& time);
+                const FrameData& frame);
 
     // Renders debug information for a tile.
     void renderTileDebug(const Tile& tile);
@@ -99,13 +101,13 @@ public:
     // Renders the red debug frame around a tile, visualizing its perimeter.
     void renderDebugFrame(const mat4 &matrix);
 
-    void renderDebugText(DebugBucket& bucket, const mat4 &matrix);
-    void renderFill(FillBucket& bucket, const StyleLayer &layer_desc, const TileID& id, const mat4 &matrix);
-    void renderLine(LineBucket& bucket, const StyleLayer &layer_desc, const TileID& id, const mat4 &matrix);
-    void renderCircle(CircleBucket& bucket, const StyleLayer &layer_desc, const TileID& id, const mat4 &matrix);
-    void renderSymbol(SymbolBucket& bucket, const StyleLayer &layer_desc, const TileID& id, const mat4 &matrix);
-    void renderRaster(RasterBucket& bucket, const StyleLayer &layer_desc, const TileID& id, const mat4 &matrix);
-    void renderBackground(const StyleLayer &layer_desc);
+    void renderDebugText(TileData&, const mat4&);
+    void renderFill(FillBucket&, const FillLayer&, const TileID&, const mat4&);
+    void renderLine(LineBucket&, const LineLayer&, const TileID&, const mat4&);
+    void renderCircle(CircleBucket&, const CircleLayer&, const TileID&, const mat4&);
+    void renderSymbol(SymbolBucket&, const SymbolLayer&, const TileID&, const mat4&);
+    void renderRaster(RasterBucket&, const RasterLayer&, const TileID&, const mat4&);
+    void renderBackground(const BackgroundLayer&);
 
     float saturationFactor(float saturation);
     float contrastFactor(float contrast);
@@ -120,9 +122,6 @@ public:
     // Adjusts the dimensions of the OpenGL viewport
     void resize();
 
-    // Changes whether debug information is drawn onto the map
-    void setDebug(bool enabled);
-
     void drawClippingMasks(const std::set<Source*>&);
     void drawClippingMask(const mat4& matrix, const ClipID& clip);
 
@@ -135,6 +134,7 @@ public:
     bool needsAnimation() const;
 
 private:
+    void setup();
     void setupShaders();
     mat4 translatedMatrix(const mat4& matrix, const std::array<float, 2> &translation, const TileID &id, TranslateAnchorType anchor);
 
@@ -143,7 +143,7 @@ private:
     template <class Iterator>
     void renderPass(RenderPass,
                     Iterator it, Iterator end,
-                    std::size_t i, int8_t increment);
+                    GLsizei i, int8_t increment);
 
     void prepareTile(const Tile& tile);
 
@@ -159,10 +159,6 @@ private:
                    void (SymbolBucket::*drawSDF)(SDFShader&));
 
     void setDepthSublayer(int n);
-
-public:
-    void useProgram(uint32_t program);
-    void lineWidth(float lineWidth);
 
 public:
     mat4 projMatrix;
@@ -185,23 +181,18 @@ public:
 
 private:
     MapData& data;
-
-    TransformState state;
+    TransformState& state;
     FrameData frame;
 
-    bool debug = false;
     int indent = 0;
 
     gl::Config config;
 
-    uint32_t gl_program = 0;
-    float gl_lineWidth = 0;
-    std::array<uint16_t, 2> gl_viewport = {{ 0, 0 }};
     RenderPass pass = RenderPass::Opaque;
     Color background = {{ 0, 0, 0, 0 }};
 
     int numSublayers = 3;
-    size_t currentLayer;
+    GLsizei currentLayer;
     float depthRangeSize;
     const float depthEpsilon = 1.0f / (1 << 16);
 
@@ -259,14 +250,6 @@ public:
     };
 
     VertexArrayObject tileBorderArray;
-
-    // Framebuffer management
-    std::vector<GLuint> fbos;
-    std::vector<GLuint> fbos_color;
-    GLuint fbo_depth_stencil;
-    int fbo_level = -1;
-    bool fbo_depth_stencil_valid = false;
-
 };
 
 }

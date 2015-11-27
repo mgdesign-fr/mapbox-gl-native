@@ -125,10 +125,10 @@ bool HeadlessView::isActive() {
     return std::this_thread::get_id() == thread;
 }
 
-void HeadlessView::resize(const uint16_t width, const uint16_t height) {
-    activate();
+void HeadlessView::resizeFramebuffer() {
+    assert(isActive());
 
-    dimensions = {{ width, height }};
+    if (!needsResize) return;
 
     clearBuffers();
 
@@ -169,7 +169,16 @@ void HeadlessView::resize(const uint16_t width, const uint16_t height) {
         throw std::runtime_error(error);
     }
 
-    deactivate();
+    needsResize = false;
+}
+
+void HeadlessView::resize(const uint16_t width, const uint16_t height) {
+    if(dimensions[0] == width &&
+       dimensions[1] == height) {
+        return;
+    }
+    dimensions = {{ width, height }};
+    needsResize = true;
 }
 
 std::unique_ptr<StillImage> HeadlessView::readStillImage() {
@@ -181,7 +190,7 @@ std::unique_ptr<StillImage> HeadlessView::readStillImage() {
     auto image = std::make_unique<StillImage>();
     image->width = w;
     image->height = h;
-    image->pixels = std::make_unique<uint32_t[]>(w * h);
+    image->pixels = std::make_unique<uint8_t[]>(w * h * 4);
 
     MBGL_CHECK_ERROR(glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels.get()));
 
@@ -208,7 +217,7 @@ void HeadlessView::clearBuffers() {
     }
 
     if (fboColor) {
-        MBGL_CHECK_ERROR(glDeleteTextures(1, &fboColor));
+        MBGL_CHECK_ERROR(glDeleteRenderbuffersEXT(1, &fboColor));
         fboColor = 0;
     }
 
@@ -259,7 +268,7 @@ std::array<uint16_t, 2> HeadlessView::getFramebufferSize() const {
 }
 
 void HeadlessView::activate() {
-     if (thread != std::thread::id()) {
+    if (thread != std::thread::id()) {
         throw std::runtime_error("OpenGL context was already current");
     }
     thread = std::this_thread::get_id();
@@ -316,7 +325,11 @@ void HeadlessView::invalidate() {
     // no-op
 }
 
-void HeadlessView::swap() {
+void HeadlessView::beforeRender() {
+    resizeFramebuffer();
+}
+
+void HeadlessView::afterRender() {
     // no-op
 }
 

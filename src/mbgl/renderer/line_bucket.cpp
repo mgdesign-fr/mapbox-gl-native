@@ -1,9 +1,7 @@
 #include <mbgl/renderer/line_bucket.hpp>
-
+#include <mbgl/layer/line_layer.hpp>
 #include <mbgl/geometry/elements_buffer.hpp>
 #include <mbgl/renderer/painter.hpp>
-#include <mbgl/style/style.hpp>
-#include <mbgl/style/style_layout.hpp>
 #include <mbgl/shader/line_shader.hpp>
 #include <mbgl/shader/linesdf_shader.hpp>
 #include <mbgl/shader/linepattern_shader.hpp>
@@ -14,12 +12,8 @@
 
 using namespace mbgl;
 
-LineBucket::LineBucket(LineVertexBuffer& vertexBuffer_,
-                       TriangleElementsBuffer& triangleElementsBuffer_)
-    : vertexBuffer(vertexBuffer_),
-      triangleElementsBuffer(triangleElementsBuffer_),
-      vertex_start(vertexBuffer_.index()),
-      triangle_elements_start(triangleElementsBuffer_.index()){};
+LineBucket::LineBucket() {
+}
 
 LineBucket::~LineBucket() {
     // Do not remove. header file only contains forward definitions to unique pointers.
@@ -32,8 +26,8 @@ void LineBucket::addGeometry(const GeometryCollection& geometryCollection) {
 }
 
 void LineBucket::addGeometry(const std::vector<Coordinate>& vertices) {
-    const auto len = [&vertices] {
-        auto l = vertices.size();
+    const GLsizei len = [&vertices] {
+        GLsizei l = static_cast<GLsizei>(vertices.size());
         // If the line has duplicate vertices at the end, adjust length to remove them.
         while (l > 2 && vertices[l - 1] == vertices[l - 2]) {
             l--;
@@ -46,7 +40,7 @@ void LineBucket::addGeometry(const std::vector<Coordinate>& vertices) {
         return;
     }
 
-    const float miterLimit = layout.join == JoinType::Bevel ? 1.05f : layout.miter_limit;
+    const float miterLimit = layout.join == JoinType::Bevel ? 1.05f : float(layout.miterLimit);
 
     const Coordinate firstVertex = vertices.front();
     const Coordinate lastVertex = vertices[len - 1];
@@ -58,7 +52,7 @@ void LineBucket::addGeometry(const std::vector<Coordinate>& vertices) {
     }
 
     const CapType beginCap = layout.cap;
-    const CapType endCap = closed ? CapType::Butt : layout.cap;
+    const CapType endCap = closed ? CapType::Butt : CapType(layout.cap);
 
     int8_t flip = 1;
     double distance = 0;
@@ -75,10 +69,10 @@ void LineBucket::addGeometry(const std::vector<Coordinate>& vertices) {
         nextNormal = util::perp(util::unit(vec2<double>(firstVertex - currentVertex)));
     }
 
-    const int32_t startVertex = (int32_t)vertexBuffer.index();
+    const GLint startVertex = vertexBuffer.index();
     std::vector<TriangleElement> triangleStore;
 
-    for (size_t i = 0; i < len; ++i) {
+    for (GLsizei i = 0; i < len; ++i) {
         if (closed && i == len - 1) {
             // if the line is closed, we treat the last vertex like the first
             nextVertex = vertices[1];
@@ -147,7 +141,7 @@ void LineBucket::addGeometry(const std::vector<Coordinate>& vertices) {
 
         if (middleVertex) {
             if (currentJoin == JoinType::Round) {
-                if (miterLength < layout.round_limit) {
+                if (miterLength < layout.roundLimit) {
                     currentJoin = JoinType::Miter;
                 } else if (miterLength <= 2) {
                     currentJoin = JoinType::FakeRound;
@@ -303,8 +297,8 @@ void LineBucket::addGeometry(const std::vector<Coordinate>& vertices) {
         startOfLine = false;
     }
 
-    const size_t endVertex = vertexBuffer.index();
-    const size_t vertexCount = endVertex - startVertex;
+    const GLsizei endVertex = vertexBuffer.index();
+    const GLsizei vertexCount = endVertex - startVertex;
 
     // Store the triangle/line groups.
     {
@@ -333,16 +327,15 @@ void LineBucket::addCurrentVertex(const Coordinate& currentVertex,
                                   float endLeft,
                                   float endRight,
                                   bool round,
-                                  int32_t startVertex,
+                                  GLint startVertex,
                                   std::vector<TriangleElement>& triangleStore) {
     int8_t tx = round ? 1 : 0;
 
     vec2<double> extrude = normal * flip;
     if (endLeft)
         extrude = extrude - (util::perp(normal) * endLeft);
-    e3 = (int32_t)vertexBuffer.add(currentVertex.x, currentVertex.y, extrude.x, extrude.y, tx, 0,
-                                   distance) -
-         startVertex;
+    e3 = vertexBuffer.add(currentVertex.x, currentVertex.y, extrude.x, extrude.y, tx, 0, distance)
+         - startVertex;
     if (e1 >= 0 && e2 >= 0) {
         triangleStore.emplace_back(e1, e2, e3);
     }
@@ -352,9 +345,8 @@ void LineBucket::addCurrentVertex(const Coordinate& currentVertex,
     extrude = normal * (-flip);
     if (endRight)
         extrude = extrude - (util::perp(normal) * endRight);
-    e3 = (int32_t)vertexBuffer.add(currentVertex.x, currentVertex.y, extrude.x, extrude.y, tx, 1,
-                                   distance) -
-         startVertex;
+    e3 = vertexBuffer.add(currentVertex.x, currentVertex.y, extrude.x, extrude.y, tx, 1, distance)
+         - startVertex;
     if (e1 >= 0 && e2 >= 0) {
         triangleStore.emplace_back(e1, e2, e3);
     }
@@ -367,13 +359,13 @@ void LineBucket::addPieSliceVertex(const Coordinate& currentVertex,
                                    double distance,
                                    const vec2<double>& extrude,
                                    bool lineTurnsLeft,
-                                   int32_t startVertex,
+                                   GLint startVertex,
                                   std::vector<TriangleElement>& triangleStore) {
     int8_t ty = lineTurnsLeft;
 
     auto flippedExtrude = extrude * (flip * (lineTurnsLeft ? -1 : 1));
-    e3 = (int32_t)vertexBuffer.add(currentVertex.x, currentVertex.y, flippedExtrude.x, flippedExtrude.y, 0, ty,
-                                   distance) - startVertex;
+    e3 = vertexBuffer.add(currentVertex.x, currentVertex.y, flippedExtrude.x, flippedExtrude.y, 0, ty, distance)
+         - startVertex;
     if (e1 >= 0 && e2 >= 0) {
         triangleStore.emplace_back(e1, e2, e3);
     }
@@ -394,10 +386,10 @@ void LineBucket::upload() {
 }
 
 void LineBucket::render(Painter& painter,
-                        const StyleLayer& layer_desc,
+                        const StyleLayer& layer,
                         const TileID& id,
                         const mat4& matrix) {
-    painter.renderLine(*this, layer_desc, id, matrix);
+    painter.renderLine(*this, dynamic_cast<const LineLayer&>(layer), id, matrix);
 }
 
 bool LineBucket::hasData() const {
@@ -405,8 +397,8 @@ bool LineBucket::hasData() const {
 }
 
 void LineBucket::drawLines(LineShader& shader) {
-    char* vertex_index = BUFFER_OFFSET(vertex_start * vertexBuffer.itemSize);
-    char* elements_index = BUFFER_OFFSET(triangle_elements_start * triangleElementsBuffer.itemSize);
+    GLbyte* vertex_index = BUFFER_OFFSET(0);
+    GLbyte* elements_index = BUFFER_OFFSET(0);
     for (auto& group : triangleGroups) {
         assert(group);
         if (!group->elements_length) {
@@ -421,8 +413,8 @@ void LineBucket::drawLines(LineShader& shader) {
 }
 
 void LineBucket::drawLineSDF(LineSDFShader& shader) {
-    char* vertex_index = BUFFER_OFFSET(vertex_start * vertexBuffer.itemSize);
-    char* elements_index = BUFFER_OFFSET(triangle_elements_start * triangleElementsBuffer.itemSize);
+    GLbyte* vertex_index = BUFFER_OFFSET(0);
+    GLbyte* elements_index = BUFFER_OFFSET(0);
     for (auto& group : triangleGroups) {
         assert(group);
         if (!group->elements_length) {
@@ -437,8 +429,8 @@ void LineBucket::drawLineSDF(LineSDFShader& shader) {
 }
 
 void LineBucket::drawLinePatterns(LinepatternShader& shader) {
-    char* vertex_index = BUFFER_OFFSET(vertex_start * vertexBuffer.itemSize);
-    char* elements_index = BUFFER_OFFSET(triangle_elements_start * triangleElementsBuffer.itemSize);
+    GLbyte* vertex_index = BUFFER_OFFSET(0);
+    GLbyte* elements_index = BUFFER_OFFSET(0);
     for (auto& group : triangleGroups) {
         assert(group);
         if (!group->elements_length) {

@@ -16,12 +16,21 @@ HOST_VERSION ?= $(BUILD_VERSION)
 export MASON_PLATFORM=$(HOST)
 export MASON_PLATFORM_VERSION=$(HOST_VERSION)
 
+ifneq (,$(wildcard scripts/$(HOST)/$(HOST_VERSION)/configure.sh))
+	CONFIGURE_FILES += scripts/$(HOST)/$(HOST_VERSION)/configure.sh
+endif
+
 HOST_SLUG = $(HOST)-$(HOST_VERSION)
 CONFIGURE_FILES = scripts/$(HOST)/configure.sh
 ifneq (,$(wildcard scripts/$(HOST)/$(HOST_VERSION)/configure.sh))
 	CONFIGURE_FILES += scripts/$(HOST)/$(HOST_VERSION)/configure.sh
 endif
 
+ifneq (,$(findstring clang,$(CXX)))
+	CXX_HOST = "clang"
+else ifneq (,$(findstring g++,$(CXX)))
+	CXX_HOST = "g++"
+endif
 
 # Text formatting
 TEXT_BOLD = \033[1m
@@ -34,21 +43,10 @@ default: ;
 
 #### Dependencies ##############################################################
 
+ifneq (,$(wildcard .git/.))
 SUBMODULES += .mason/mason.sh
 .mason/mason.sh:
 	./scripts/flock.py .git/Submodule.lock git submodule update --init .mason
-
-SUBMODULES += styles/styles
-styles/styles:
-	./scripts/flock.py .git/Submodule.lock git submodule update --init styles
-
-SUBMODULES += src/mbgl/util/geojsonvt/geojsonvt.hpp
-src/mbgl/util/geojsonvt/geojsonvt.hpp:
-	./scripts/flock.py .git/Submodule.lock git submodule update --init src/mbgl/util/geojsonvt
-
-SUBMODULES += test/suite/package.json
-test/suite/package.json:
-	./scripts/flock.py .git/Submodule.lock git submodule update --init test/suite
 
 ifeq ($(HOST),ios)
 SUBMODULES += platform/ios/vendor/SMCalloutView/SMCalloutView.h
@@ -58,6 +56,7 @@ platform/ios/vendor/SMCalloutView/SMCalloutView.h:
 SUBMODULES += test/ios/KIF/KIF.xcodeproj
 test/ios/KIF/KIF.xcodeproj:
 	./scripts/flock.py .git/Submodule.lock git submodule update --init test/ios/KIF
+endif
 endif
 
 # Wildcard targets get removed after build by default, but we want to preserve the config.
@@ -78,6 +77,7 @@ GYP_FLAGS += -Dcache_lib=$(CACHE)
 GYP_FLAGS += -Dheadless_lib=$(HEADLESS)
 GYP_FLAGS += -Dtest=$(BUILD_TEST)
 GYP_FLAGS += -Drender=$(BUILD_RENDER)
+GYP_FLAGS += -Dcxx_host=$(CXX_HOST)
 GYP_FLAGS += --depth=.
 GYP_FLAGS += -Goutput_dir=.
 GYP_FLAGS += --generator-output=./build/$(HOST_SLUG)
@@ -85,18 +85,46 @@ GYP_FLAGS += --generator-output=./build/$(HOST_SLUG)
 .PHONY: Makefile/__project__
 Makefile/__project__: print-env $(SUBMODULES) config/$(HOST_SLUG).gypi
 	@printf "$(TEXT_BOLD)$(COLOR_GREEN)* Recreating project...$(FORMAT_END)\n"
-	$(QUIET)$(ENV) deps/run_gyp gyp/$(HOST).gyp $(GYP_FLAGS) -f make$(GYP_FLAVOR_SUFFIX)
+	$(QUIET)$(ENV) deps/run_gyp gyp/$(HOST).gyp $(GYP_FLAGS) \
+		-f make$(GYP_FLAVOR_SUFFIX)
 
 .PHONY: Xcode/__project__
 Xcode/__project__: print-env $(SUBMODULES) config/$(HOST_SLUG).gypi
 	@printf "$(TEXT_BOLD)$(COLOR_GREEN)* Recreating project...$(FORMAT_END)\n"
-	$(QUIET)$(ENV) deps/run_gyp gyp/$(HOST).gyp $(GYP_FLAGS) -f xcode$(GYP_FLAVOR_SUFFIX)
+	$(QUIET)$(ENV) deps/run_gyp gyp/$(HOST).gyp $(GYP_FLAGS) \
+		-f xcode$(GYP_FLAVOR_SUFFIX)
 
 #### Build individual targets ##################################################
+
+NODE_PRE_GYP = $(shell npm bin)/node-pre-gyp
+node/configure:
+	$(QUIET)$(ENV) $(NODE_PRE_GYP) configure --clang -- \
+	$(GYP_FLAGS) -Dlibuv_cflags= -Dlibuv_ldflags= -Dlibuv_static_libs=
+
+node/xproj:
+	$(QUIET)$(ENV) $(NODE_PRE_GYP) configure --clang -- \
+	$(GYP_FLAGS) -f xcode -Dlibuv_cflags= -Dlibuv_ldflags= -Dlibuv_static_libs=
+	$(QUIET)$(ENV) ./scripts/node/create_npm_scheme.sh test
+	$(QUIET)$(ENV) ./scripts/node/create_npm_scheme.sh run test-suite
+
+Makefile/node: Makefile/__project__ node/configure
+	@printf "$(TEXT_BOLD)$(COLOR_GREEN)* Building target node...$(FORMAT_END)\n"
+	$(QUIET)$(ENV) $(NODE_PRE_GYP) build --clang -- \
+ 	-j$(JOBS)
 
 Makefile/%: Makefile/__project__
 	@printf "$(TEXT_BOLD)$(COLOR_GREEN)* Building target $*...$(FORMAT_END)\n"
 	$(QUIET)$(ENV) $(MAKE) -C build/$(HOST_SLUG) BUILDTYPE=$(BUILDTYPE) $*
+
+Xcode/node: Xcode/__project__ node/xproj
+	@printf "$(TEXT_BOLD)$(COLOR_GREEN)* Building target node...$(FORMAT_END)\n"
+	$(QUIET)$(ENV) set -o pipefail && xcodebuild \
+		$(XCODEBUILD_ARGS) \
+		-project ./build/binding.xcodeproj \
+		-configuration $(BUILDTYPE) \
+		-target mapbox-gl-native \
+		-jobs $(JOBS) \
+		$(XCPRETTY)
 
 Xcode/%: Xcode/__project__
 	@printf "$(TEXT_BOLD)$(COLOR_GREEN)* Building target $*...$(FORMAT_END)\n"

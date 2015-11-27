@@ -10,10 +10,9 @@
 #include <mbgl/storage/sqlite_cache.hpp>
 
 #pragma GCC diagnostic push
-#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #pragma GCC diagnostic ignored "-Wshadow"
-#endif
 #include <boost/program_options.hpp>
 #pragma GCC diagnostic pop
 
@@ -24,6 +23,12 @@ namespace po = boost::program_options;
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+
+#if UV_VERSION_MAJOR == 0 && UV_VERSION_MINOR <= 10
+#define UV_ASYNC_PARAMS(handle) uv_async_t *handle, int
+#else
+#define UV_ASYNC_PARAMS(handle) uv_async_t *handle
+#endif
 
 int main(int argc, char *argv[]) {
     std::string style_path;
@@ -99,7 +104,7 @@ int main(int argc, char *argv[]) {
     }
 
     uv_async_t *async = new uv_async_t;
-    uv_async_init(uv_default_loop(), async, [](uv_async_t *as, int) {
+    uv_async_init(uv_default_loop(), async, [](UV_ASYNC_PARAMS(as)) {
         std::unique_ptr<const StillImage> image(reinterpret_cast<const StillImage *>(as->data));
         uv_close(reinterpret_cast<uv_handle_t *>(as), [](uv_handle_t *handle) {
             delete reinterpret_cast<uv_async_t *>(handle);

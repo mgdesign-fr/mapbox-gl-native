@@ -11,14 +11,14 @@
       ],
 
       'sources': [
-        '<!@(find src -name "*.hpp")',
-        '<!@(find src -name "*.cpp")',
-        '<!@(find src -name "*.c")',
-        '<!@(find src -name "*.h")',
-        '<!@(find include -name "*.hpp")',
-        '<!@(find include -name "*.h")',
-        '<!@(find src -name "*.glsl")',
-        'bin/style.json'
+        '<!@(find ../src -name "*.hpp")',
+        '<!@(find ../src -name "*.cpp")',
+        '<!@(find ../src -name "*.c")',
+        '<!@(find ../src -name "*.h")',
+        '<!@(find ../include -name "*.hpp")',
+        '<!@(find ../include -name "*.h")',
+        '<!@(find ../src -name "*.glsl")',
+        '../bin/style.json'
       ],
 
       'include_dirs': [
@@ -31,10 +31,15 @@
           '<@(libuv_cflags)',
           '<@(opengl_cflags)',
           '<@(boost_cflags)',
+          '<@(geojsonvt_cflags)',
+          '<@(variant_cflags)',
+          '<@(rapidjson_cflags)',
         ],
         'cflags': [
           '<@(libuv_cflags)',
           '<@(opengl_cflags)',
+          '<@(variant_cflags)',
+          '<@(rapidjson_cflags)',
           '-fPIC'
         ],
         'ldflags': [
@@ -43,6 +48,7 @@
         ],
         'libraries': [
           '<@(libuv_static_libs)',
+          '<@(geojsonvt_static_libs)',
         ],
       },
 
