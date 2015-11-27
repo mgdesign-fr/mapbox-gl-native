@@ -273,7 +273,10 @@ struct mbgl_Transform_t {
 MBGL_C_EXPORT
 int mbgl_Transform_init(mbgl_View_t* view, mbgl_Transform_t** out) {
   mbgl_Transform_t* result = (mbgl_Transform_t*)malloc(sizeof(*result));
-  result->transform = new mbgl::Transform(*view->view);
+  
+  mbgl::ConstrainMode mode = mbgl::ConstrainMode::HeightOnly;   // NOTE(nico) this is the default value used in mbgl::Map constructor
+  result->transform = new mbgl::Transform(*view->view, mode);
+  
   *out = result;
   return 0;
 }
@@ -354,9 +357,12 @@ struct mbgl_MapData_t {
 /*****************************************************************************/
 
 MBGL_C_EXPORT
-int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out) {
+int mbgl_MapData_init(int mapMode, float pixelRatio, mbgl_MapData_t** out) {
   mbgl_MapData_t* result = (mbgl_MapData_t*)malloc(sizeof(*result));
-  result->mapData = new mbgl::MapData((mbgl::MapMode)mode, pixelRatio);
+  
+  mbgl::GLContextMode glMode = mbgl::GLContextMode::Shared;           // NOTE(nico) this is a sensible default for us
+  result->mapData = new mbgl::MapData((mbgl::MapMode)mapMode, glMode, pixelRatio);
+  
   *out = result;
   return 0;
 }
