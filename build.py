@@ -111,6 +111,9 @@ for src_folder in src_folders:
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "variant-1.0")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "rapidjson-1.0.2", "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "geojson-vt-cpp-2.1.6.3", "include")]
       clang_cmd += ["-I" + r"C:\mingw\lib\libzip\include"]                                                  # NOTE(nico) - ? for <zipconf.h>
       clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
       clang_cmd += ["-I" + os.path.join(buildGenPath, "include")]                                           # NOTE(jeff) - for mbgl generated files
