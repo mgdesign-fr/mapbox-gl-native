@@ -161,9 +161,6 @@ MBGL_C_EXPORT
 int mbgl_Map_getDebug(mbgl_Map_t* map);
 
 MBGL_C_EXPORT
-void mbgl_Map_setNeedsRepaint(mbgl_Map_t* map);
-
-MBGL_C_EXPORT
 void mbgl_Map_setCollisionDebug(mbgl_Map_t* map, int value);
 
 MBGL_C_EXPORT

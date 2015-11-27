@@ -238,11 +238,6 @@ int mbgl_Map_getDebug(mbgl_Map_t* map) {
 }
 
 MBGL_C_EXPORT
-void mbgl_Map_setNeedsRepaint(mbgl_Map_t* map) {
-  return map->map->setNeedsRepaint();
-}
-
-MBGL_C_EXPORT
 void mbgl_Map_setCollisionDebug(mbgl_Map_t* map, int value) {
   map->map->setCollisionDebug(value);
 }
