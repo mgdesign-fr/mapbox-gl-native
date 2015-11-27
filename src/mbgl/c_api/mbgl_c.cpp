@@ -204,7 +204,7 @@ void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, 
 
 MBGL_C_EXPORT
 void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey/*TODO, const Duration& = Duration::zero()*/) {
-  map->map->rotateBy( PrecisionPoint(sx, sy), PrecisionPoint(ex, ey) ;
+  map->map->rotateBy( mbgl::PrecisionPoint(sx, sy), mbgl::PrecisionPoint(ex, ey) );
 }
 
 MBGL_C_EXPORT
