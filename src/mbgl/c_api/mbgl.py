@@ -65,7 +65,8 @@ mbgl_CApiView_Callbacks_t_activate           = ctypes.CFUNCTYPE(None, ctypes.POI
 mbgl_CApiView_Callbacks_t_deactivate         = ctypes.CFUNCTYPE(None, ctypes.POINTER(mbgl_CApiView_t), ctypes.c_void_p)
 mbgl_CApiView_Callbacks_t_notify             = ctypes.CFUNCTYPE(None, ctypes.POINTER(mbgl_CApiView_t), ctypes.c_void_p)
 mbgl_CApiView_Callbacks_t_invalidate         = ctypes.CFUNCTYPE(None, ctypes.POINTER(mbgl_CApiView_t), ctypes.c_void_p)
-mbgl_CApiView_Callbacks_t_swap               = ctypes.CFUNCTYPE(None, ctypes.POINTER(mbgl_CApiView_t), ctypes.c_void_p)
+mbgl_CApiView_Callbacks_t_beforeRender       = ctypes.CFUNCTYPE(None, ctypes.POINTER(mbgl_CApiView_t), ctypes.c_void_p)
+mbgl_CApiView_Callbacks_t_afterRender        = ctypes.CFUNCTYPE(None, ctypes.POINTER(mbgl_CApiView_t), ctypes.c_void_p)
 class mbgl_CApiView_Callbacks_t(ctypes.Structure):
   _fields_=[("getPixelRatio"     , mbgl_CApiView_Callbacks_t_getPixelRatio),
             ("getSize"           , mbgl_CApiView_Callbacks_t_getSize),
@@ -74,7 +75,9 @@ class mbgl_CApiView_Callbacks_t(ctypes.Structure):
             ("deactivate"        , mbgl_CApiView_Callbacks_t_deactivate),
             ("notify"            , mbgl_CApiView_Callbacks_t_notify),
             ("invalidate"        , mbgl_CApiView_Callbacks_t_invalidate),
-            ("swap"              , mbgl_CApiView_Callbacks_t_swap)]
+            ("beforeRender"      , mbgl_CApiView_Callbacks_t_beforeRender)
+            ("afterRender"       , mbgl_CApiView_Callbacks_t_afterRender)
+            ]
 
 # mbgl_CApiView_init
 #
@@ -504,8 +507,11 @@ class View:
     def _View_invalidate(_view, _userdata):
       return self.invalidate()
     
-    def _View_swap(_view, _userdata):
-      return self.swap()
+    def _View_beforeRender(_view, _userdata):
+      return self.beforeRender()
+    
+    def _View_afterRender(_view, _userdata):
+      return self.afterRender()
     
     _c_callbacks = mbgl_CApiView_Callbacks_t()
     _c_callbacks.getPixelRatio = mbgl_CApiView_Callbacks_t_getPixelRatio(_View_getPixelRatio)
@@ -515,7 +521,8 @@ class View:
     _c_callbacks.deactivate = mbgl_CApiView_Callbacks_t_deactivate(_View_deactivate)
     _c_callbacks.notify = mbgl_CApiView_Callbacks_t_notify(_View_notify)
     _c_callbacks.invalidate = mbgl_CApiView_Callbacks_t_invalidate(_View_invalidate)
-    _c_callbacks.swap = mbgl_CApiView_Callbacks_t_swap(_View_swap)
+    _c_callbacks.beforeRender = mbgl_CApiView_Callbacks_t_beforeRender(_View_beforeRender)
+    _c_callbacks.afterRender = mbgl_CApiView_Callbacks_t_afterRender(_View_afterRender)
     
     _c = ctypes.POINTER(mbgl_CApiView_t)()
     mbgl_CApiView_init(_c_callbacks, None, _c)
