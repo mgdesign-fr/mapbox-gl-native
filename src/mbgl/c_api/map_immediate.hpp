@@ -60,9 +60,6 @@ struct MapImmediate {
         // TODO(nico) ? give the clock in a known unit as a parameter, then convert to mbgl::Clock (which is std::chrono::steady_clock)
         //   this may not be a good thing, as mbgl::Clock::now() is used as a time source in internal mbgl code.
         mbgl::Update flags = transform->updateTransitions(mbgl::Clock::now());
-        if (mapData->getNeedsRepaint()) {
-            flags |= mbgl::Update::Repaint;
-        }
         mapContext->triggerUpdate(transform->getState(), flags);
     }
 
