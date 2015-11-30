@@ -75,10 +75,15 @@ src_folders = ["src", os.path.join("platform", "default"), buildGenPath]
 src_folders += [ os.path.join("..", "deps", "geojson-vt-cpp-2.1.6.3", "src") ]
 
 EXCLUDED_FILES = [ "asset_request_zip.cpp" ]
+EXCLUDED_FOLDERS = [ os.path.join("src", "mbgl", "util", "geojsonvt") ]
 
 for src_folder in src_folders:
 
   for root, dirs, files in os.walk(src_folder):
+    
+    if root in EXCLUDED_FOLDERS:
+      print "skipping folder '%s'" % root
+      continue
     
     for fname in files:
       name, ext = os.path.splitext(fname)
