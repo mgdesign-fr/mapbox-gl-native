@@ -75,7 +75,7 @@ class mbgl_CApiView_Callbacks_t(ctypes.Structure):
             ("deactivate"        , mbgl_CApiView_Callbacks_t_deactivate),
             ("notify"            , mbgl_CApiView_Callbacks_t_notify),
             ("invalidate"        , mbgl_CApiView_Callbacks_t_invalidate),
-            ("beforeRender"      , mbgl_CApiView_Callbacks_t_beforeRender)
+            ("beforeRender"      , mbgl_CApiView_Callbacks_t_beforeRender),
             ("afterRender"       , mbgl_CApiView_Callbacks_t_afterRender)
             ]
 
