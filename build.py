@@ -30,7 +30,7 @@ BUILD_RENDER_EXE = UNIT_TESTS is None and not c_api_only and not win_app_only
 BUILD_WINAPP_EXE = UNIT_TESTS is None or win_app_only
 LINK_MAPBOX_GL_DLL = UNIT_TESTS is None and not win_app_only
 
-RELEASE_FLAGS = ["-DNDEBUG", "-O3"]   # -g ?    # these settings currently cause rendering artifacts (precision issues?)
+RELEASE_FLAGS = ["-DNDEBUG", "-Og"]   # IMPORTANT(nico) -O2/-O3 cause crash when rendering symbols with icons... - with -Og seems to work fine.
 DEBUG_FLAGS = ["-DDEBUG", "-Og", "-g"]
 C_FLAGS = (RELEASE_FLAGS if release_mode else DEBUG_FLAGS) + ["-fexceptions"] 
 CPP_FLAGS = C_FLAGS + ["-std=c++14", "-frtti"]
