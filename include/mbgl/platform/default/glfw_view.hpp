@@ -25,7 +25,8 @@ public:
     void deactivate() override;
     void notify() override;
     void invalidate() override;
-    void swap() override;
+    void beforeRender() override;
+    void afterRender() override;
 
     static void onKey(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void onScroll(GLFWwindow *window, double xoffset, double yoffset);
@@ -65,6 +66,7 @@ private:
     const bool benchmark = false;
     bool tracking = false;
     bool rotating = false;
+    bool pitching = false;
 
     // Frame timer
     int frames = 0;

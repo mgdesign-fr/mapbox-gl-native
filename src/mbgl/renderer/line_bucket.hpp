@@ -6,9 +6,8 @@
 #include <mbgl/geometry/vao.hpp>
 #include <mbgl/geometry/elements_buffer.hpp>
 #include <mbgl/geometry/line_buffer.hpp>
-#include <mbgl/style/style_bucket.hpp>
-#include <mbgl/style/style_layout.hpp>
 #include <mbgl/util/vec.hpp>
+#include <mbgl/layer/line_layer.hpp>
 
 #include <vector>
 
@@ -25,12 +24,12 @@ class LineBucket : public Bucket {
     using TriangleGroup = ElementGroup<3>;
 
 public:
-    LineBucket(LineVertexBuffer &vertexBuffer, TriangleElementsBuffer &triangleElementsBuffer);
+    LineBucket();
     ~LineBucket() override;
 
     void upload() override;
     void render(Painter&, const StyleLayer&, const TileID&, const mat4&) override;
-    bool hasData() const;
+    bool hasData() const override;
 
     void addGeometry(const GeometryCollection&);
     void addGeometry(const std::vector<Coordinate>& line);
@@ -46,24 +45,21 @@ private:
     };
     void addCurrentVertex(const Coordinate& currentVertex, float flip, double distance,
             const vec2<double>& normal, float endLeft, float endRight, bool round,
-            int32_t startVertex, std::vector<LineBucket::TriangleElement>& triangleStore);
+            GLint startVertex, std::vector<LineBucket::TriangleElement>& triangleStore);
     void addPieSliceVertex(const Coordinate& currentVertex, float flip, double distance,
-            const vec2<double>& extrude, bool lineTurnsLeft, int32_t startVertex,
+            const vec2<double>& extrude, bool lineTurnsLeft, GLint startVertex,
             std::vector<TriangleElement>& triangleStore);
 
 public:
-    StyleLayoutLine layout;
+    LineLayoutProperties layout;
 
 private:
-    LineVertexBuffer& vertexBuffer;
-    TriangleElementsBuffer& triangleElementsBuffer;
+    LineVertexBuffer vertexBuffer;
+    TriangleElementsBuffer triangleElementsBuffer;
 
-    const size_t vertex_start;
-    const size_t triangle_elements_start;
-
-    int32_t e1;
-    int32_t e2;
-    int32_t e3;
+    GLint e1;
+    GLint e2;
+    GLint e3;
 
     std::vector<std::unique_ptr<TriangleGroup>> triangleGroups;
 };

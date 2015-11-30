@@ -204,7 +204,7 @@ void mbgl_Map_setLatLngZoom(mbgl_Map_t* map, double latitude, double longitude, 
 
 MBGL_C_EXPORT
 void mbgl_Map_rotateBy(mbgl_Map_t* map, double sx, double sy, double ex, double ey/*TODO, const Duration& = Duration::zero()*/) {
-  map->map->rotateBy(sx, sy, ex, ey);
+  map->map->rotateBy( mbgl::PrecisionPoint(sx, sy), mbgl::PrecisionPoint(ex, ey) );
 }
 
 MBGL_C_EXPORT
@@ -238,11 +238,6 @@ int mbgl_Map_getDebug(mbgl_Map_t* map) {
 }
 
 MBGL_C_EXPORT
-void mbgl_Map_setNeedsRepaint(mbgl_Map_t* map) {
-  return map->map->setNeedsRepaint();
-}
-
-MBGL_C_EXPORT
 void mbgl_Map_setCollisionDebug(mbgl_Map_t* map, int value) {
   map->map->setCollisionDebug(value);
 }
@@ -273,7 +268,10 @@ struct mbgl_Transform_t {
 MBGL_C_EXPORT
 int mbgl_Transform_init(mbgl_View_t* view, mbgl_Transform_t** out) {
   mbgl_Transform_t* result = (mbgl_Transform_t*)malloc(sizeof(*result));
-  result->transform = new mbgl::Transform(*view->view);
+  
+  mbgl::ConstrainMode mode = mbgl::ConstrainMode::HeightOnly;   // NOTE(nico) this is the default value used in mbgl::Map constructor
+  result->transform = new mbgl::Transform(*view->view, mode);
+  
   *out = result;
   return 0;
 }
@@ -296,8 +294,7 @@ int mbgl_Transform_resize(mbgl_Transform_t* transform, uint16_t width, uint16_t 
 // Position
 MBGL_C_EXPORT
 void mbgl_Transform_setLatLng(mbgl_Transform_t* transform, double latitude, double longitude) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setLatLng(mbgl::LatLng(latitude,longitude), defaultCameraOptions);
+  transform->transform->setLatLng(mbgl::LatLng(latitude,longitude));
 }
 
 MBGL_C_EXPORT
@@ -321,15 +318,13 @@ double mbgl_Transform_getZoom(mbgl_Transform_t* transform) {
 // Position + zoom
 MBGL_C_EXPORT
 void mbgl_Transform_setLatLngZoom(mbgl_Transform_t* transform, double latitude, double longitude, double zoom) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setLatLngZoom(mbgl::LatLng(latitude,longitude), zoom, defaultCameraOptions);
+  transform->transform->setLatLngZoom(mbgl::LatLng(latitude,longitude), zoom);
 }
 
 // Angle
 MBGL_C_EXPORT
 void mbgl_Transform_setAngle(mbgl_Transform_t* transform, double angle) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setAngle(angle, defaultCameraOptions);
+  transform->transform->setAngle(angle);
 }
 
 MBGL_C_EXPORT
@@ -340,8 +335,7 @@ double mbgl_Transform_getAngle(mbgl_Transform_t* transform) {
 // Pitch
 MBGL_C_EXPORT
 void mbgl_Transform_setPitch(mbgl_Transform_t* transform, double pitch) {
-  mbgl::CameraOptions defaultCameraOptions;
-  transform->transform->setPitch(pitch, defaultCameraOptions);
+  transform->transform->setPitch(pitch);
 }
 
 MBGL_C_EXPORT
@@ -358,9 +352,12 @@ struct mbgl_MapData_t {
 /*****************************************************************************/
 
 MBGL_C_EXPORT
-int mbgl_MapData_init(int mode, float pixelRatio, mbgl_MapData_t** out) {
+int mbgl_MapData_init(int mapMode, float pixelRatio, mbgl_MapData_t** out) {
   mbgl_MapData_t* result = (mbgl_MapData_t*)malloc(sizeof(*result));
-  result->mapData = new mbgl::MapData((mbgl::MapMode)mode, pixelRatio);
+  
+  mbgl::GLContextMode glMode = mbgl::GLContextMode::Shared;           // NOTE(nico) this is a sensible default for us
+  result->mapData = new mbgl::MapData((mbgl::MapMode)mapMode, glMode, pixelRatio);
+  
   *out = result;
   return 0;
 }

@@ -1,5 +1,5 @@
 #include <mbgl/mbgl.hpp>
-#include "../platform/default/default_styles.hpp"
+#include <mbgl/util/default_styles.hpp>
 #include <mbgl/util/uv.hpp>
 #include <mbgl/platform/log.hpp>
 #include <mbgl/platform/platform.hpp>
@@ -84,7 +84,7 @@ void quit_handler(int) {
 int main(int argc, char *argv[]) {
     bool fullscreen = false;
     bool benchmark = false;
-    std::string style;
+    std::string styleURL;
     double latitude = 0, longitude = 0;
     double bearing = 0, zoom = 1;
     bool skipConfig = false;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
             benchmark = true;
             break;
         case 's':
-            style = std::string("asset://") + std::string(optarg);
+            styleURL = std::string("asset://") + std::string(optarg);
             break;
         case 'x':
             longitude = atof(optarg);
@@ -279,13 +279,12 @@ int main(int argc, char *argv[]) {
     mbgl_MapImmediate_resize(imMap, (mbgl_View_t*)view_c);
 
     // Load style
-    if (style.empty()) {
-        const auto& newStyle = mbgl::util::defaultStyles[1];
-        style = newStyle.first;
+    if (styleURL.empty()) {
+        styleURL = mbgl::util::default_styles::streets.url;
     }
 
     //mapContext.setStyleURL(style);
-    mbgl_MapContext_setStyleURL(mapContext, style.c_str());
+    mbgl_MapContext_setStyleURL(mapContext, styleURL.c_str());
 
     while (!(shouldCloseWindow || glfwWindowShouldClose(window))) {
         

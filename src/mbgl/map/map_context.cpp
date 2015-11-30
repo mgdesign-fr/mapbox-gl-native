@@ -2,8 +2,6 @@
 #include <mbgl/map/map_data.hpp>
 #include <mbgl/map/view.hpp>
 #include <mbgl/map/still_image.hpp>
-#include <mbgl/map/annotation.hpp>
-#include <mbgl/annotation/sprite_store.hpp>
 
 #include <mbgl/platform/log.hpp>
 
@@ -13,11 +11,10 @@
 #include <mbgl/storage/resource.hpp>
 #include <mbgl/storage/response.hpp>
 
-#include <mbgl/geometry/sprite_atlas.hpp>
-
 #include <mbgl/style/style.hpp>
-#include <mbgl/style/style_bucket.hpp>
-#include <mbgl/style/style_layer.hpp>
+
+#include <mbgl/sprite/sprite_atlas.hpp>
+#include <mbgl/sprite/sprite_store.hpp>
 
 #include <mbgl/util/gl_object_store.hpp>
 #include <mbgl/util/uv_detail.hpp>
@@ -34,14 +31,15 @@ MapContext::MapContext(View& view_, FileSource& fileSource, MapData& data_)
     : view(view_),
       data(data_),
       asyncUpdate(std::make_unique<uv::async>(util::RunLoop::getLoop(), [this] { update(); })),
-      texturePool(std::make_unique<TexturePool>()),
-      viewInvalidated(false) {
+      asyncInvalidate(std::make_unique<uv::async>(util::RunLoop::getLoop(), [&view_] { view_.invalidate(); })),
+      texturePool(std::make_unique<TexturePool>()) {
     assert(util::ThreadContext::currentlyOn(util::ThreadType::Map));
 
     util::ThreadContext::setFileSource(&fileSource);
     util::ThreadContext::setGLObjectStore(&glObjectStore);
 
     asyncUpdate->unref();
+    asyncInvalidate->unref();
 
     view.activate();
 }
@@ -54,11 +52,7 @@ MapContext::~MapContext() {
 void MapContext::cleanup() {
     view.notify();
 
-    if (styleRequest) {
-        FileSource* fs = util::ThreadContext::getFileSource();
-        fs->cancel(styleRequest);
-        styleRequest = nullptr;
-    }
+    styleRequest = nullptr;
 
     // Explicit resets currently necessary because these abandon resources that need to be
     // cleaned up by glObjectStore.performCleanup();
@@ -74,17 +68,16 @@ void MapContext::cleanup() {
 void MapContext::pause() {
     MBGL_CHECK_ERROR(glFinish());
 
-    viewInvalidated = false;
-
     view.deactivate();
 
     std::unique_lock<std::mutex> lockPause(data.mutexPause);
-    data.condPaused.notify_all();
-    data.condResume.wait(lockPause);
+    data.paused = true;
+    data.condPause.notify_all();
+    data.condPause.wait(lockPause, [&]{ return !data.paused; });
 
     view.activate();
 
-    invalidateView();
+    asyncInvalidate->send();
 }
 
 void MapContext::triggerUpdate(const TransformState& state, const Update flags) {
@@ -95,16 +88,15 @@ void MapContext::triggerUpdate(const TransformState& state, const Update flags) 
 }
 
 void MapContext::setStyleURL(const std::string& url) {
-    FileSource* fs = util::ThreadContext::getFileSource();
-
-    if (styleRequest) {
-        fs->cancel(styleRequest);
+    if (styleURL == url) {
+        return;
     }
 
+    styleRequest = nullptr;
     styleURL = url;
     styleJSON.clear();
 
-    style = std::make_unique<Style>(data, asyncUpdate->get()->loop);
+    style = std::make_unique<Style>(data);
 
     const size_t pos = styleURL.rfind('/');
     std::string base = "";
@@ -112,22 +104,37 @@ void MapContext::setStyleURL(const std::string& url) {
         base = styleURL.substr(0, pos + 1);
     }
 
-    styleRequest = fs->request({ Resource::Kind::Style, styleURL }, util::RunLoop::getLoop(), [this, base](const Response &res) {
+    FileSource* fs = util::ThreadContext::getFileSource();
+    styleRequest = fs->request({ Resource::Kind::Style, styleURL }, [this, base](Response res) {
+        if (res.stale) {
+            // Only handle fresh responses.
+            return;
+        }
         styleRequest = nullptr;
 
-        if (res.status == Response::Successful) {
-            loadStyleJSON(res.data, base);
+        if (res.error) {
+            if (res.error->reason == Response::Error::Reason::NotFound && styleURL.find("mapbox://") == 0) {
+                Log::Error(Event::Setup, "style %s could not be found or is an incompatible legacy map or style", styleURL.c_str());
+            } else {
+                Log::Error(Event::Setup, "loading style failed: %s", res.error->message.c_str());
+                data.loading = false;
+            }
         } else {
-            Log::Error(Event::Setup, "loading style failed: %s", res.message.c_str());
+            loadStyleJSON(*res.data, base);
         }
+
     });
 }
 
 void MapContext::setStyleJSON(const std::string& json, const std::string& base) {
+    if (styleJSON == json) {
+        return;
+    }
+
     styleURL.clear();
     styleJSON = json;
 
-    style = std::make_unique<Style>(data, asyncUpdate->get()->loop);
+    style = std::make_unique<Style>(data);
 
     loadStyleJSON(json, base);
 }
@@ -141,115 +148,12 @@ void MapContext::loadStyleJSON(const std::string& json, const std::string& base)
     // force style cascade, causing all pending transitions to complete.
     style->cascade();
 
-    updateFlags |= Update::DefaultTransition | Update::Classes | Update::Zoom;
+    // set loading here so we don't get a false loaded event as soon as map is
+    // created but before a style is loaded
+    data.loading = true;
+
+    updateFlags |= Update::DefaultTransition | Update::Classes | Update::Zoom | Update::Annotations;
     asyncUpdate->send();
-
-    auto staleTiles = data.getAnnotationManager()->resetStaleTiles();
-    if (!staleTiles.empty()) {
-        updateAnnotationTiles(staleTiles);
-    }
-}
-
-void MapContext::updateAnnotationTiles(const std::unordered_set<TileID, TileID::Hash>& ids) {
-    assert(util::ThreadContext::currentlyOn(util::ThreadType::Map));
-
-    util::exclusive<AnnotationManager> annotationManager = data.getAnnotationManager();
-    annotationManager->markStaleTiles(ids);
-
-    if (!style) {
-        return;
-    }
-
-    // grab existing, single shape annotations source
-    const auto& shapeID = AnnotationManager::ShapeLayerID;
-    Source* shapeAnnotationSource = style->getSource(shapeID);
-
-    // Style not parsed yet
-    if (!shapeAnnotationSource) {
-        return;
-    }
-
-    shapeAnnotationSource->enabled = true;
-
-    // create (if necessary) layers and buckets for each shape
-    for (const auto &shapeAnnotationID : annotationManager->getOrderedShapeAnnotations()) {
-        const std::string shapeLayerID = shapeID + "." + util::toString(shapeAnnotationID);
-
-        const auto layer_it = std::find_if(style->layers.begin(), style->layers.end(),
-            [&shapeLayerID](util::ptr<StyleLayer> layer) {
-            return (layer->id == shapeLayerID);
-        });
-
-        if (layer_it == style->layers.end()) {
-            // query shape styling
-            auto& shapeStyle = annotationManager->getAnnotationStyleProperties(shapeAnnotationID);
-
-            // apply shape paint properties
-            ClassProperties paintProperties;
-
-            if (shapeStyle.is<LineProperties>()) {
-                // opacity
-                PropertyValue lineOpacity = ConstantFunction<float>(shapeStyle.get<LineProperties>().opacity);
-                paintProperties.set(PropertyKey::LineOpacity, lineOpacity);
-
-                // line width
-                PropertyValue lineWidth = ConstantFunction<float>(shapeStyle.get<LineProperties>().width);
-                paintProperties.set(PropertyKey::LineWidth, lineWidth);
-
-                // stroke color
-                PropertyValue strokeColor = ConstantFunction<Color>(shapeStyle.get<LineProperties>().color);
-                paintProperties.set(PropertyKey::LineColor, strokeColor);
-            } else if (shapeStyle.is<FillProperties>()) {
-                // opacity
-                PropertyValue fillOpacity = ConstantFunction<float>(shapeStyle.get<FillProperties>().opacity);
-                paintProperties.set(PropertyKey::FillOpacity, fillOpacity);
-
-                // fill color
-                PropertyValue fillColor = ConstantFunction<Color>(shapeStyle.get<FillProperties>().fill_color);
-                paintProperties.set(PropertyKey::FillColor, fillColor);
-
-                // stroke color
-                PropertyValue strokeColor = ConstantFunction<Color>(shapeStyle.get<FillProperties>().stroke_color);
-                paintProperties.set(PropertyKey::FillOutlineColor, strokeColor);
-            }
-
-            std::map<ClassID, ClassProperties> shapePaints;
-            shapePaints.emplace(ClassID::Default, std::move(paintProperties));
-
-            // create shape layer
-            util::ptr<StyleLayer> shapeLayer = std::make_shared<StyleLayer>(shapeLayerID, std::move(shapePaints));
-            shapeLayer->type = (shapeStyle.is<LineProperties>() ? StyleLayerType::Line : StyleLayerType::Fill);
-
-            // add to end of other shape layers just before (last) point layer
-            style->layers.emplace((style->layers.end() - 1), shapeLayer);
-
-            // create shape bucket & connect to source
-            util::ptr<StyleBucket> shapeBucket = std::make_shared<StyleBucket>(shapeLayer->type);
-            shapeBucket->name = shapeLayer->id;
-            shapeBucket->source = shapeID;
-            shapeBucket->source_layer = shapeLayer->id;
-
-            // apply line layout properties to bucket
-            if (shapeStyle.is<LineProperties>()) {
-                shapeBucket->layout.set(PropertyKey::LineJoin, ConstantFunction<JoinType>(JoinType::Round));
-            }
-
-            // connect layer to bucket
-            shapeLayer->bucket = shapeBucket;
-        }
-    }
-
-    // invalidate annotations layer tiles
-    for (const auto &source : style->sources) {
-        if (source->info.type == SourceType::Annotations) {
-            source->invalidateTiles(ids);
-        }
-    }
-
-    updateFlags |= Update::Classes;
-    asyncUpdate->send();
-
-    annotationManager->resetStaleTiles();
 }
 
 void MapContext::update() {
@@ -259,11 +163,16 @@ void MapContext::update() {
         updateFlags = Update::Nothing;
     }
 
-    if (updateFlags == Update::Nothing) {
+    if (updateFlags == Update::Nothing || (data.mode == MapMode::Still && !callback)) {
         return;
     }
 
     data.setAnimationTime(Clock::now());
+
+    if (style->loaded && updateFlags & Update::Annotations) {
+        data.getAnnotationManager()->updateStyle(*style);
+        updateFlags |= Update::Classes;
+    }
 
     if (updateFlags & Update::Classes) {
         style->cascade();
@@ -276,8 +185,8 @@ void MapContext::update() {
     style->update(transformState, *texturePool);
 
     if (data.mode == MapMode::Continuous) {
-        invalidateView();
-    } else if (callback && isLoaded()) {
+        asyncInvalidate->send();
+    } else if (callback && style->isLoaded()) {
         renderSync(transformState, frameData);
     }
 
@@ -326,27 +235,30 @@ bool MapContext::renderSync(const TransformState& state, const FrameData& frame)
         return false;
     }
 
+    view.beforeRender();
+
     transformState = state;
 
     // Cleanup OpenGL objects that we abandoned since the last render call.
     glObjectStore.performCleanup();
 
-    if (!painter) {
-        painter = std::make_unique<Painter>(data);
-        painter->setup();
-    }
-
-    painter->setDebug(data.getDebug());
-    painter->render(*style, transformState, frame, data.getAnimationTime());
+    if (!painter) painter = std::make_unique<Painter>(data, transformState);
+    painter->render(*style, frame);
 
     if (data.mode == MapMode::Still) {
         callback(nullptr, view.readStillImage());
         callback = nullptr;
     }
 
-    view.swap();
-    viewInvalidated = false;
-    data.setNeedsRepaint(style->hasTransitions() || painter->needsAnimation());
+    view.afterRender();
+
+    if (style->hasTransitions()) {
+        updateFlags |= Update::Classes;
+        asyncUpdate->send();
+    } else if (painter->needsAnimation()) {
+        updateFlags |= Update::Repaint;
+        asyncUpdate->send();
+    }
 
     return isLoaded();
 }
@@ -373,7 +285,7 @@ void MapContext::setSourceTileCacheSize(size_t size) {
         for (const auto &source : style->sources) {
             source->setCacheSize(sourceCacheSize);
         }
-        invalidateView();
+        asyncInvalidate->send();
     }
 }
 
@@ -383,7 +295,7 @@ void MapContext::onLowMemory() {
     for (const auto &source : style->sources) {
         source->onLowMemory();
     }
-    invalidateView();
+    asyncInvalidate->send();
 }
 
 void MapContext::setSprite(const std::string& name, std::shared_ptr<const SpriteImage> sprite) {
@@ -413,11 +325,15 @@ void MapContext::onResourceLoadingFailed(std::exception_ptr error) {
     }
 }
 
-void MapContext::invalidateView() {
-    if (!viewInvalidated) {
-        viewInvalidated = true;
-        view.invalidate();
+void MapContext::dumpDebugLogs() const {
+    Log::Info(Event::General, "--------------------------------------------------------------------------------");
+    Log::Info(Event::General, "MapContext::styleURL: %s", styleURL.c_str());
+    if (style) {
+        style->dumpDebugLogs();
+    } else {
+        Log::Info(Event::General, "no style loaded");
     }
+    Log::Info(Event::General, "--------------------------------------------------------------------------------");
 }
 
 }

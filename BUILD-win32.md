@@ -126,6 +126,19 @@ libtool --version
   b2 install --with-program_options --prefix=/mingw toolset=gcc --layout=system \
     variant=release -j 7 link=shared,static
   ```
+  
+1. mapbox `variant`
+  `variant-1.0` copié dans `..\deps` - zip téléchargé depuis github (https://github.com/mapbox/variant/releases)
+  copié les fichiers `hpp` dans un dossier `mapbox`
+  
+1. `rapidjson`
+  https://github.com/miloyip/rapidjson - header only
+  `rapidjson-1.0.2` dans `../deps`
+  
+1. `geojson-vt-cpp-2.1.6.3`
+  le build ne fonctionne pas : nécessite `mason`
+  copie des fichiers dans ../deps
+  
 
 # Notes about *our* MinGW installation
 

@@ -1,6 +1,7 @@
 #ifndef MBGL_MAP_TRANSFORM_STATE
 #define MBGL_MAP_TRANSFORM_STATE
 
+#include <mbgl/map/mode.hpp>
 #include <mbgl/util/geo.hpp>
 #include <mbgl/util/constants.hpp>
 #include <mbgl/util/vec.hpp>
@@ -21,6 +22,8 @@ class TransformState {
     friend class Transform;
 
 public:
+    TransformState(ConstrainMode = ConstrainMode::HeightOnly);
+
     // Matrix
     void matrixFor(mat4& matrix, const TileID& id, const int8_t z) const;
     void getProjMatrix(mat4& matrix) const;
@@ -35,7 +38,9 @@ public:
     void getLonLat(double &lon, double &lat) const;
 
     // Position
-    const LatLng getLatLng() const;
+    LatLng getLatLng() const;
+    double pixel_x() const;
+    double pixel_y() const;
 
     // Zoom
     float getNormalizedZoom() const;
@@ -48,29 +53,28 @@ public:
 
     // Rotation
     float getAngle() const;
-
     float getAltitude() const;
     float getPitch() const;
 
-    // Changing
+    // State
     bool isChanging() const;
-
-    double pixel_x() const;
-    double pixel_y() const;
+    bool isRotating() const;
+    bool isScaling() const;
+    bool isPanning() const;
+    bool isGestureInProgress() const;
 
     // Conversion and projection
+    PrecisionPoint latLngToPoint(const LatLng&) const;
+    LatLng pointToLatLng(const PrecisionPoint&) const;
 
-    vec2<double> latLngToPoint(const LatLng& latLng) const;
-    LatLng pointToLatLng(const vec2<double> point) const;
+    TileCoordinate latLngToCoordinate(const LatLng&) const;
+    LatLng coordinateToLatLng(const TileCoordinate&) const;
 
-    TileCoordinate latLngToCoordinate(const LatLng& latLng) const;
-    LatLng coordinateToLatLng(const TileCoordinate& coord) const;
-
-    vec2<double> coordinateToPoint(const TileCoordinate& coord) const;
-    TileCoordinate pointToCoordinate(const vec2<double> point) const;
+    PrecisionPoint coordinateToPoint(const TileCoordinate&) const;
+    TileCoordinate pointToCoordinate(const PrecisionPoint&) const;
 
 private:
-    void constrain(double& scale, double& y) const;
+    void constrain(double& scale, double& x, double& y) const;
 
     // Limit the amount of zooming possible on the map.
     double min_scale = std::pow(2, 0);
@@ -79,17 +83,19 @@ private:
     // logical dimensions
     uint16_t width = 0, height = 0;
 
-    float xLng(float x, float worldSize) const;
-    float yLat(float y, float worldSize) const;
-    float lngX(float lon) const;
-    float latY(float lat) const;
-    float zoomScale(float zoom) const;
+    double xLng(double x, double worldSize) const;
+    double yLat(double y, double worldSize) const;
+    double lngX(double lon) const;
+    double latY(double lat) const;
+    double zoomScale(double zoom) const;
     float worldSize() const;
 
-    mat4 coordinatePointMatrix(float z) const;
+    mat4 coordinatePointMatrix(double z) const;
     mat4 getPixelMatrix() const;
 
 private:
+    ConstrainMode constrainMode;
+
     // animation state
     bool rotating = false;
     bool scaling = false;
@@ -108,6 +114,6 @@ private:
     double Cc = (scale * util::tileSize) / util::M2PI;
 };
 
-}
+} // namespace mbgl
 
-#endif
+#endif // MBGL_MAP_TRANSFORM_STATE

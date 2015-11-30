@@ -18,13 +18,13 @@ TEST(API, SetStyle) {
 
     {
         Map map(view, fileSource, MapMode::Still);
-        map.setStyleJSON("invalid", "test/suite");
+        map.setStyleJSON("invalid", "");
     }
 
     auto observer = Log::removeObserver();
     auto flo = dynamic_cast<FixtureLogObserver*>(observer.get());
     EXPECT_EQ(1ul, flo->count({ EventSeverity::Error, Event::ParseStyle, -1,
-        "Error parsing style JSON at 0: Expect either an object or array at root" }));
+        "Error parsing style JSON at 0: Invalid value." }));
     auto unchecked = flo->unchecked();
     EXPECT_TRUE(unchecked.empty()) << unchecked;
 }

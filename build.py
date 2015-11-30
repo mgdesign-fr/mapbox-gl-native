@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO(nico) stop copy/pasting "-I" directives for deps...
+
 import os, subprocess
 import sys
 
@@ -8,6 +10,11 @@ UNIT_TESTS=None
 c_api_only = "--c_api_only" in sys.argv
 win_app_only = "--winapp_only" in sys.argv
 release_mode = "--release" in sys.argv
+debug_mode = "--debug" in sys.argv
+
+if not (debug_mode or release_mode):
+  print "please specify --debug or --release"
+  sys.exit(1)
 
 if not c_api_only and "--test" in sys.argv:
   UNIT_TESTS = ["fixture_log_observer.cpp", "main.cpp", "mock_file_source.cpp", "util.cpp", "gtest-all.cc", "storage.cpp"]
@@ -30,8 +37,9 @@ CPP_FLAGS = C_FLAGS + ["-std=c++14", "-frtti"]
 
 FILES_TO_SKIP=0
 
+buildOutputFolder = "mingw-release" if release_mode else "mingw-debug"
 scriptPath = os.path.dirname(os.path.abspath(__file__))
-buildPath = os.path.join(scriptPath, "build", "mingw")
+buildPath = os.path.join(scriptPath, "build", buildOutputFolder)
 buildGenPath = os.path.join(buildPath, "gen")
 file_index = 0
 
@@ -63,12 +71,19 @@ subprocess.call(build_shaders_cmd)
 #
 OBJs = []
 src_folders = ["src", os.path.join("platform", "default"), buildGenPath]
+# NOTE(nico) as `mason` is needed for geojson-vt, we include its sources directly
+src_folders += [ os.path.join("..", "deps", "geojson-vt-cpp-2.1.6.3", "src") ]
 
 EXCLUDED_FILES = [ "asset_request_zip.cpp" ]
+EXCLUDED_FOLDERS = [ os.path.join("src", "mbgl", "util", "geojsonvt") ]
 
 for src_folder in src_folders:
 
   for root, dirs, files in os.walk(src_folder):
+    
+    if root in EXCLUDED_FOLDERS:
+      print "skipping folder '%s'" % root
+      continue
     
     for fname in files:
       name, ext = os.path.splitext(fname)
@@ -111,6 +126,9 @@ for src_folder in src_folders:
       clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "variant-1.0")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "rapidjson-1.0.2", "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "geojson-vt-cpp-2.1.6.3", "include")]
       clang_cmd += ["-I" + r"C:\mingw\lib\libzip\include"]                                                  # NOTE(nico) - ? for <zipconf.h>
       clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
       clang_cmd += ["-I" + os.path.join(buildGenPath, "include")]                                           # NOTE(jeff) - for mbgl generated files
@@ -162,6 +180,9 @@ if BUILD_RENDER_EXE:
   clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "variant-1.0")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "rapidjson-1.0.2", "include")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "geojson-vt-cpp-2.1.6.3", "include")]
   clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
@@ -186,6 +207,9 @@ if BUILD_WINAPP_EXE:
   clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
   clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "variant-1.0")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "rapidjson-1.0.2", "include")]
+  clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "geojson-vt-cpp-2.1.6.3", "include")]
   clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
   clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
@@ -245,6 +269,9 @@ for src_folder in src_folders:
       clang_cmd += ["-I" + os.path.join(scriptPath, "deps", "gtest")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
       clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "variant-1.0")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "rapidjson-1.0.2", "include")]
+      clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "geojson-vt-cpp-2.1.6.3", "include")]
       clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
       clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
       clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]
@@ -262,6 +289,9 @@ clang_cmd += [ "-o", "test.exe" ]
 clang_cmd += ["-I" + os.path.join(scriptPath, "src"), "-I" + os.path.join(scriptPath, "include")]
 clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "libuv-0.10.36", "include")]
 clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "variant-1.0")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "rapidjson-1.0.2", "include")]
+clang_cmd += ["-I" + os.path.join(scriptPath, "..", "deps", "geojson-vt-cpp-2.1.6.3", "include")]
 clang_cmd += ["-I" + r"C:\mingw\include"]                                                             # NOTE(nico) - ? for gcc only, which is suppose to look here
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "libuv-0.10.36") ]
 clang_cmd += [ "-L"+os.path.join(scriptPath, "..", "deps", "nunicode-1.5.1", "_build", "libnu") ]

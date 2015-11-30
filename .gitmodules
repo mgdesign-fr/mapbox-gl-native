@@ -1,14 +1,6 @@
-[submodule "test/suite"]
-	path = test/suite
-	url = https://github.com/mapbox/mapbox-gl-test-suite.git
-
 [submodule ".mason"]
 	path = .mason
 	url = https://github.com/mapbox/mason.git
-
-[submodule "styles"]
-	path = styles
-	url = https://github.com/mapbox/mapbox-gl-styles.git
 
 [submodule "test/ios/KIF"]
 	path = test/ios/KIF
@@ -18,6 +10,3 @@
 	path = platform/ios/vendor/SMCalloutView
 	url = https://github.com/nfarina/calloutview.git
 
-[submodule "src/mbgl/util/geojsonvt"]
-	path = src/mbgl/util/geojsonvt
-	url = https://github.com/mapbox/geojson-vt-cpp

@@ -6,14 +6,11 @@
 #import "Mapbox.h"
 #import "MGLTViewController.h"
 
-#import "LocationMocker/LocationMocker.h"
 #import <CoreLocation/CoreLocation.h>
+#import <KIF/UIAutomationHelper.h>
 
-@interface MGLMapView (LocationManager)
-
-@property (nonatomic) CLLocationManager *locationManager;
-
-@end
+const NSTimeInterval MGLAnimationDurationDefault = 0.3;
+const NSTimeInterval MGLAnimationDurationOverDefault = MGLAnimationDurationDefault * 2;
 
 @interface MapViewTests : KIFTestCase <MGLMapViewDelegate>
 
@@ -33,21 +30,34 @@
     tester.mapView.scrollEnabled = YES;
     tester.mapView.rotateEnabled = YES;
 
+    [tester.mapView removeAnnotations:tester.mapView.annotations];
+
     tester.viewController.navigationController.navigationBarHidden = YES;
     tester.viewController.navigationController.toolbarHidden = YES;
 
     tester.mapView.delegate = self;
+
+    [tester waitForTimeInterval:0.5];
+}
+
+- (void)approveLocationIfNeeded {
+    if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined) {
+        [UIAutomationHelper acknowledgeSystemAlert];
+        [tester waitForTimeInterval:1];
+    }
+    XCTAssertTrue([CLLocationManager locationServicesEnabled]);
+    XCTAssertEqual([CLLocationManager authorizationStatus], kCLAuthorizationStatusAuthorizedAlways);
 }
 
 - (void)testDirectionSet {
-    tester.mapView.direction = 270;
+    [tester.mapView setDirection:270 animated:YES];
+    [tester waitForTimeInterval:MGLAnimationDurationOverDefault];
 
     XCTAssertEqual(tester.mapView.direction,
                    270,
                    @"setting direction should take effect");
 
-    [tester waitForTimeInterval:1];
-
+    [tester waitForAnimationsToFinish];
     XCTAssertEqual(tester.compass.alpha,
                    1,
                    @"compass should be visible when map is rotated");
@@ -58,20 +68,21 @@
 }
 
 - (void)testCompassTap {
-    tester.mapView.direction = 180;
+    [tester.mapView setDirection:180 animated:YES];
+    [tester waitForTimeInterval:MGLAnimationDurationOverDefault];
 
     XCTAssertEqual(tester.mapView.direction,
                    180,
                    @"setting direction should take effect");
 
     [tester.compass tap];
-
-    [tester waitForTimeInterval:1];
+    [tester waitForTimeInterval:MGLAnimationDurationOverDefault];
 
     XCTAssertEqual(tester.mapView.direction,
                    0,
                    @"tapping compass should reset map direction");
-
+    
+    [tester waitForAnimationsToFinish];
     XCTAssertEqual(tester.compass.alpha,
                    0,
                    @"compass should not be visible when map is unrotated");
@@ -81,20 +92,21 @@
 }
 
 - (void)testDirectionReset {
-    tester.mapView.direction = 90;
+    [tester.mapView setDirection:90 animated:YES];
+    [tester waitForTimeInterval:MGLAnimationDurationOverDefault];
 
     XCTAssertEqual(tester.mapView.direction,
                    90,
                    @"setting direction should take effect");
 
     [tester.mapView resetNorth];
-
-    [tester waitForTimeInterval:1];
+    [tester waitForTimeInterval:MGLAnimationDurationOverDefault];
 
     XCTAssertEqual(tester.mapView.direction,
                    0,
                    @"resetting north should reset map direction");
 
+    [tester waitForAnimationsToFinish];
     XCTAssertEqual(tester.compass.alpha,
                    0,
                    @"compass should not be visible when map is unrotated");
@@ -220,6 +232,31 @@
                       @"panning map right should decrease center longitude");
 }
 
+- (void)testSetCenterCancelsTransitions {
+    XCTestExpectation *cameraIsInDCExpectation = [self expectationWithDescription:@"camera reset to DC"];
+    
+    CLLocationCoordinate2D dc = CLLocationCoordinate2DMake(38.894368, -77.036487);
+    CLLocationCoordinate2D dc_west = CLLocationCoordinate2DMake(38.894368, -77.076487);
+    [tester.mapView setCenterCoordinate:dc animated:NO];
+    [tester.mapView setCenterCoordinate:dc_west animated:YES];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.15 * NSEC_PER_SEC),
+                   dispatch_get_main_queue(),
+                   ^{
+                       [tester.mapView setCenterCoordinate:dc animated:NO];
+                       XCTAssertEqualWithAccuracy(dc.latitude,
+                                                  tester.mapView.centerCoordinate.latitude,
+                                                  0.0005,
+                                                  @"setting center coordinate should cancel transitions");
+                       XCTAssertEqualWithAccuracy(dc.longitude,
+                                                  tester.mapView.centerCoordinate.longitude,
+                                                  0.0005,
+                                                  @"setting center coordinate should cancel transitions");
+                       [cameraIsInDCExpectation fulfill];
+                   });
+    
+    [self waitForExpectationsWithTimeout:1.0 handler:nil];
+}
+
 - (void)testPanDisabled {
     tester.mapView.scrollEnabled = NO;
     CLLocationCoordinate2D centerCoordinate = tester.mapView.centerCoordinate;
@@ -280,12 +317,14 @@
 
     tester.mapView.centerCoordinate = newCenterCoordinate;
 
-    XCTAssertEqual(tester.mapView.centerCoordinate.latitude,
+    XCTAssertEqualWithAccuracy(tester.mapView.centerCoordinate.latitude,
                    newCenterCoordinate.latitude,
+                   0.001,
                    @"setting center should change latitude");
 
-    XCTAssertEqual(tester.mapView.centerCoordinate.longitude,
+    XCTAssertEqualWithAccuracy(tester.mapView.centerCoordinate.longitude,
                    newCenterCoordinate.longitude,
+                   0.001,
                    @"setting center should change longitude");
 }
 
@@ -302,6 +341,44 @@
                                newZoom,
                                0.01,
                                @"setting zoom should take effect");
+}
+
+- (void)testMarkerSelection {
+    CGPoint point = CGPointMake(100, 100);
+    MGLPointAnnotation *marker = [MGLPointAnnotation new];
+    marker.coordinate = [tester.mapView convertPoint:point toCoordinateFromView:tester.mapView];
+    marker.title = @"test"; // title required for callout
+    [tester.mapView addAnnotation:marker];
+
+    XCTAssertEqual(tester.mapView.selectedAnnotations.count, 0);
+
+    [tester.mapView selectAnnotation:marker animated:NO];
+    XCTAssertEqualObjects(tester.mapView.selectedAnnotations.firstObject, marker);
+
+    [tester.mapView deselectAnnotation:marker animated:NO];
+    XCTAssertEqual(tester.mapView.selectedAnnotations.count, 0);
+}
+
+- (void)testMarkerAddWithoutDelegate {
+    XCTAssertFalse([tester.viewController respondsToSelector:@selector(mapView:imageForAnnotation:)]);
+
+    MGLPointAnnotation *marker = [MGLPointAnnotation new];
+    marker.coordinate = tester.mapView.centerCoordinate;
+    [tester.mapView addAnnotation:marker];
+
+    [tester.mapView selectAnnotation:marker animated:NO];
+    XCTAssertEqualObjects(tester.mapView.selectedAnnotations.firstObject, marker);
+    XCTAssertEqual([[tester.mapView subviewsWithClassNamePrefix:@"SM"] count], 0); // no callout for no title
+
+    [tester.mapView deselectAnnotation:marker animated:NO];
+    marker.title = @"test";
+    [tester.mapView selectAnnotation:marker animated:NO];
+    XCTAssertEqualObjects(tester.mapView.selectedAnnotations.firstObject, marker);
+    XCTAssertGreaterThan([[tester.mapView subviewsWithClassNamePrefix:@"SM"] count], 0);
+}
+
+- (BOOL)mapView:(MGLMapView *)mapView annotationCanShowCallout:(id<MGLAnnotation>)annotation {
+    return YES;
 }
 
 - (void)testTopLayoutGuide {
@@ -509,12 +586,13 @@
                                                             object:tester.mapView
                                                whileExecutingBlock:^{
                                                    tester.mapView.showsUserLocation = YES;
+                                                   [self approveLocationIfNeeded];
                                                }];
 
     XCTAssertEqualObjects(notification.name,
                           @"mapViewWillStartLocatingUser",
                           @"mapViewWillStartLocatingUser delegate should receive message");
-    XCTAssertNotNil(tester.mapView.locationManager,
+    XCTAssertNotNil([tester.mapView valueForKeyPath:@"locationManager"],
                  "map view location manager should not be nil");
 
     notification = [system waitForNotificationName:@"mapViewDidStopLocatingUser"
@@ -529,7 +607,7 @@
     XCTAssertEqual(tester.mapView.userTrackingMode,
                    MGLUserTrackingModeNone,
                    @"user tracking mode should be none");
-    XCTAssertNil(tester.mapView.locationManager,
+    XCTAssertNil([tester.mapView valueForKeyPath:@"locationManager"],
                  "map view location manager should be nil");
 }
 
@@ -539,72 +617,6 @@
 
 - (void)mapViewDidStopLocatingUser:(MGLMapView *)mapView {
     [[NSNotificationCenter defaultCenter] postNotificationName:@"mapViewDidStopLocatingUser" object:mapView];
-}
-
-- (void)testUserTrackingModeFollow {
-    tester.mapView.userTrackingMode = MGLUserTrackingModeFollow;
-
-    [tester acknowledgeSystemAlert];
-
-    XCTAssertEqual(tester.mapView.userLocationVisible,
-                   YES,
-                   @"user location should be visible");
-    XCTAssertEqual(tester.mapView.userLocation.coordinate.latitude,
-                   kMockedLatitude,
-                   @"user location latitude should match mocked latitude");
-    XCTAssertEqual(tester.mapView.userLocation.coordinate.longitude,
-                   kMockedLongitude,
-                   @"user location longitude should match mocked longitude");
-
-    [tester.mapView dragFromPoint:CGPointMake(10, 10) toPoint:CGPointMake(50, 100) steps:10];
-
-    XCTAssertEqual(tester.mapView.userLocationVisible,
-                   YES,
-                   @"user location should still be visible after panning");
-    XCTAssertEqual(tester.mapView.userTrackingMode,
-                   MGLUserTrackingModeNone,
-                   @"user tracking mode should reset to none");
-}
-
-// DOES NOT CURRENTLY PASS, bug with tracking mode not being set properly (or reset)
-- (void)testUserTrackingModeFollowWithHeading {
-    tester.mapView.userTrackingMode = MGLUserTrackingModeFollowWithHeading;
-    
-    [tester acknowledgeSystemAlert];
-    
-    XCTAssertEqual(tester.mapView.userLocationVisible,
-                   YES,
-                   @"user location should be visible");
-    XCTAssertEqual(tester.mapView.userLocation.coordinate.latitude,
-                   kMockedLatitude,
-                   @"user location latitude should match mocked latitude");
-    XCTAssertEqual(tester.mapView.userLocation.coordinate.longitude,
-                   kMockedLongitude,
-                   @"user location longitude should match mocked longitude");
-    
-    XCTAssertEqual(tester.mapView.userTrackingMode,
-                   MGLUserTrackingModeFollowWithHeading,
-                   @"user tracking mode should be follow with heading");
-    XCTAssertEqual(tester.mapView.userLocation.heading.trueHeading,
-                   kMockedHeadingTrueHeading,
-                   @"user true heading should match mocked true heading");
-    XCTAssertEqual(tester.mapView.userLocation.heading.headingAccuracy,
-                   kMockedHeadingAccuracy,
-                   @"user heading accuracy should match mocked accuracy");
-    
-    [tester.compass tap];
-    
-    [tester waitForTimeInterval:1];
-    
-    XCTAssertEqual(tester.mapView.userLocationVisible,
-                   YES,
-                   @"user location should be visible");
-    XCTAssertEqual(tester.mapView.userTrackingMode,
-                   MGLUserTrackingModeFollow,
-                   @"user tracking mode should be follow");
-    XCTAssertEqual(tester.mapView.direction,
-                   0,
-                   @"user heading should be reset to zero/north");
 }
 
 @end

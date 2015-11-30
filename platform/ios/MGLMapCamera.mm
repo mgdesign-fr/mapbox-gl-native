@@ -26,8 +26,8 @@
     CLLocationDirection heading = std::atan((centerMeters.northing - eyeMeters.northing) /
                                             (centerMeters.easting - eyeMeters.easting));
     
-    double groundDistance = std::sqrt(std::pow(centerMeters.northing - eyeMeters.northing, 2) +
-                                      std::pow(centerMeters.easting - eyeMeters.easting, 2));
+    double groundDistance = std::hypot(centerMeters.northing - eyeMeters.northing,
+                                       centerMeters.easting - eyeMeters.easting);
     CGFloat pitch = std::atan(eyeAltitude / groundDistance);
     
     return [[self alloc] initWithCenterCoordinate:centerCoordinate
@@ -66,11 +66,11 @@
 {
     if (self = [super init])
     {
-        _centerCoordinate = CLLocationCoordinate2DMake([[coder decodeObjectForKey:@"centerLatitude"] doubleValue],
-                                                       [[coder decodeObjectForKey:@"centerLongitude"] doubleValue]);
-        _altitude = [[coder decodeObjectForKey:@"altitude"] doubleValue];
-        _pitch = [[coder decodeObjectForKey:@"pitch"] doubleValue];
-        _heading = [[coder decodeObjectForKey:@"heading"] doubleValue];
+        _centerCoordinate = CLLocationCoordinate2DMake([coder decodeDoubleForKey:@"centerLatitude"],
+                                                       [coder decodeDoubleForKey:@"centerLongitude"]);
+        _altitude = [coder decodeDoubleForKey:@"altitude"];
+        _pitch = [coder decodeDoubleForKey:@"pitch"];
+        _heading = [coder decodeDoubleForKey:@"heading"];
     }
     return self;
 }

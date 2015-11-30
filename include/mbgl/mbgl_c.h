@@ -46,7 +46,8 @@ struct mbgl_CApiView_Callbacks_t
   void (*deactivate)(mbgl_CApiView_t* view, void* userdata);
   void (*notify)(mbgl_CApiView_t* view, void* userdata);
   void (*invalidate)(mbgl_CApiView_t* view, void* userdata);
-  void (*swap)(mbgl_CApiView_t* view, void* userdata);
+  void (*beforeRender)(mbgl_CApiView_t* view, void* userdata);
+  void (*afterRender)(mbgl_CApiView_t* view, void* userdata);
 };
 
 MBGL_C_EXPORT
@@ -159,9 +160,6 @@ void mbgl_Map_toggleDebug(mbgl_Map_t* map);
 
 MBGL_C_EXPORT
 int mbgl_Map_getDebug(mbgl_Map_t* map);
-
-MBGL_C_EXPORT
-void mbgl_Map_setNeedsRepaint(mbgl_Map_t* map);
 
 MBGL_C_EXPORT
 void mbgl_Map_setCollisionDebug(mbgl_Map_t* map, int value);

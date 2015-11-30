@@ -84,9 +84,16 @@ public:
       opaqueView->callbacks->invalidate(opaqueView, opaqueView->userdata);
   }
   
-  void swap() override {
-    if(opaqueView->callbacks->swap != 0)
-      opaqueView->callbacks->swap(opaqueView, opaqueView->userdata);
+  // Called from the render thread before the render begins.
+  void beforeRender() override {
+    if(opaqueView->callbacks->beforeRender != 0)
+      opaqueView->callbacks->beforeRender(opaqueView, opaqueView->userdata);
+  }
+
+  // Called from the render thread after the render is complete.
+  void afterRender() override {
+    if(opaqueView->callbacks->afterRender != 0)
+      opaqueView->callbacks->afterRender(opaqueView, opaqueView->userdata);
   }
 };
 
