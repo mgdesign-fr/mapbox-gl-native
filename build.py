@@ -37,8 +37,9 @@ CPP_FLAGS = C_FLAGS + ["-std=c++14", "-frtti"]
 
 FILES_TO_SKIP=0
 
+buildOutputFolder = "mingw-release" if release_mode else "mingw-debug"
 scriptPath = os.path.dirname(os.path.abspath(__file__))
-buildPath = os.path.join(scriptPath, "build", "mingw")
+buildPath = os.path.join(scriptPath, "build", buildOutputFolder)
 buildGenPath = os.path.join(buildPath, "gen")
 file_index = 0
 
